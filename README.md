@@ -48,7 +48,7 @@ customer_churn_prediction/
 
 ### Clone the repository
 git clone https://github.com/connectwithvanshika/customer_churn_prediction.git  
-cd customer_churn_prediction  
+cd project
 
 ### Install dependencies
 pip install -r requirements.txt  
