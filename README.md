@@ -84,6 +84,9 @@ The application predicts whether a customer is likely to churn or stay. This can
 - Connect with real-time database  
 - Enhance UI and user experience  
 
-## Author
+## Team Members
 Vanshika Yadav  
-GitHub: https://github.com/connectwithvanshika
+Riya Garg  
+Ronit Singh  
+Sankalp  
+
