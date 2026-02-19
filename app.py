@@ -100,7 +100,7 @@ div.stButton > button:focus:not(:active) {
 """, unsafe_allow_html=True)
 
 # ---------------- HERO SECTION ----------------
-st.markdown('<div class="main-title">Customer Churn Intelligence</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">Customer Churn Prediction Model</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Predict customer retention using machine learning insights</div>', unsafe_allow_html=True)
 
 st.markdown("---")
