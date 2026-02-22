@@ -220,16 +220,16 @@ Libraries:
 
 ## Project Structure
 
-project/
-│
-├── .streamlit/
-│   └── config.toml                # Streamlit configuration settings
-│
-├── app.py                         # Main Streamlit application
-├── final_churn_model.pkl          # Trained XGBoost model
-├── model_test.py                  # Model testing & experimentation script
-├── requirements.txt               # Python dependencies
-└── README.md                      # Project documentation
+   project/
+   │
+   ├── .streamlit/
+   │   └── config.toml                # Streamlit configuration settings
+   │
+   ├── app.py                         # Main Streamlit application
+   ├── final_churn_model.pkl          # Trained XGBoost model
+   ├── model_test.py                  # Model testing & experimentation script
+   ├── requirements.txt               # Python dependencies
+   └── README.md                      # Project documentation
 
 ---
 
