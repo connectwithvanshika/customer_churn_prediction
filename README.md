@@ -222,13 +222,14 @@ Libraries:
 
 project/
 │
-├── app.py
-├── final_churn_model.pkl
-├── threshold.pkl
-├── model_test.py
-├── requirements.txt
-├── README.md
-└── dataset.csv
+├── .streamlit/
+│   └── config.toml                # Streamlit configuration settings
+│
+├── app.py                         # Main Streamlit application
+├── final_churn_model.pkl          # Trained XGBoost model
+├── model_test.py                  # Model testing & experimentation script
+├── requirements.txt               # Python dependencies
+└── README.md                      # Project documentation
 
 ---
 
