@@ -340,6 +340,8 @@ if run:
     }
 
     input_df = pd.DataFrame([enc])
+    feature_order = joblib.load("feature_order.pkl")
+    input_df = input_df[feature_order]
     num_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
     input_df[num_cols] = scaler.transform(input_df[num_cols])
 
