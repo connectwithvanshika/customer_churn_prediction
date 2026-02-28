@@ -665,9 +665,7 @@ hr{{border-color:{BORDER}!important;margin:1.2rem 0!important;}}
 </style>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────────────────────────
 #  SIDEBAR NAVIGATION
-# ─────────────────────────────────────────────────────────────────
 cur = st.session_state.page
 
 SIDE_BG    = SURF
@@ -754,9 +752,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────────────────────────
 #  PLOTLY THEME HELPER
-# ─────────────────────────────────────────────────────────────────
 def pl(fig, title="", h=360):
     fig.update_layout(
         title=dict(text=title, font=dict(family="Poppins",size=13,color=TEXT), x=0.015, pad=dict(l=8)),
@@ -777,9 +773,7 @@ def pl(fig, title="", h=360):
 
 NEON = [A1,"#ef4444",A2,"#f59e0b","#10b981",A3,"#6366f1"]
 
-# ══════════════════════════════════════════════════════════════════
 #  DASHBOARD PAGE
-# ══════════════════════════════════════════════════════════════════
 if cur == "Dashboard":
 
     st.markdown(f"""
@@ -897,9 +891,8 @@ if cur == "Dashboard":
     st.plotly_chart(fig_h, use_container_width=True)
 
 
-# ══════════════════════════════════════════════════════════════════
+
 #  PREDICT CHURN PAGE
-# ══════════════════════════════════════════════════════════════════
 elif cur == "Predict":
 
     st.markdown(f"""
@@ -1041,9 +1034,7 @@ elif cur == "Predict":
             st.plotly_chart(fig_g, use_container_width=True)
 
 
-# ══════════════════════════════════════════════════════════════════
 #  MODEL INSIGHTS PAGE
-# ══════════════════════════════════════════════════════════════════
 elif cur == "Insights":
 
     st.markdown(f"""
