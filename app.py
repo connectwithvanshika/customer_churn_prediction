@@ -1034,9 +1034,7 @@ elif cur == "Predict":
             st.plotly_chart(fig_g, use_container_width=True)
 
 
-# ══════════════════════════════════════════════════════════════════
 #  MODEL INSIGHTS PAGE
-# ══════════════════════════════════════════════════════════════════
 elif cur == "Insights":
 
     st.markdown(f"""

@@ -16,7 +16,7 @@ Dataset: Telco Customer Churn
 Total Records: 7,043  
 Total Features: 21  
 
-### Target Variable
+## Target Variable
 - Churn  
   - 0 → Customer retained  
   - 1 → Customer churned  
