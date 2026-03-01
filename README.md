@@ -113,24 +113,65 @@ Preprocessing artifacts saved:
 
 ---
 
-## 5. Model Development
+## 5. Model Performance
 
-Three models were trained and evaluated:
+Three models were evaluated using a stratified train-test split (70:30).
 
-- Logistic Regression
-- Decision Tree
-- XGBoost (Final Selected Model)
+### 1. Logistic Regression
 
-### Why XGBoost?
+•⁠  ⁠Accuracy: 0.80  
+•⁠  ⁠Recall (Churn Class): 0.56  
+•⁠  ⁠Precision (Churn Class): 0.64  
+•⁠  ⁠F1-Score (Churn Class): 0.60  
 
-Although Logistic Regression showed slightly higher accuracy, XGBoost achieved the highest recall for churn customers.
+Logistic Regression achieved the highest overall accuracy (80%). However, recall for churn customers was moderate (56%), meaning a significant number of churn cases were missed.
 
-Recall is prioritized in churn prediction because missing a potential churn customer is more costly than incorrectly flagging a loyal one.
+---
 
-Key Metrics (XGBoost):
-- High recall for churn class
-- Balanced precision-recall tradeoff
-- Improved performance after threshold tuning
+### 2. Decision Tree
+
+•⁠  ⁠Accuracy: 0.78  
+•⁠  ⁠Recall (Churn Class): 0.38  
+•⁠  ⁠Precision (Churn Class): 0.64  
+•⁠  ⁠F1-Score (Churn Class): 0.48  
+
+Although Decision Tree achieved competitive accuracy (78%), it performed poorly in identifying churn customers, with recall dropping to 38%. This makes it less suitable for churn detection where identifying at-risk customers is critical.
+
+---
+
+### 3. XGBoost (Default Threshold = 0.5)
+
+•⁠  ⁠Accuracy: 0.75  
+•⁠  ⁠Recall (Churn Class): 0.75  
+•⁠  ⁠Precision (Churn Class): 0.52  
+•⁠  ⁠F1-Score (Churn Class): 0.62  
+
+XGBoost significantly improved recall for churn customers (75%), meaning it correctly identified a larger proportion of customers likely to leave. However, overall accuracy was slightly lower compared to Logistic Regression.
+
+---
+
+### 4. XGBoost (Adjusted Threshold = 0.4)
+
+•⁠  ⁠Accuracy: 0.72  
+•⁠  ⁠Recall (Churn Class): 0.81  
+•⁠  ⁠Precision (Churn Class): 0.48  
+•⁠  ⁠F1-Score (Churn Class): 0.60  
+
+After lowering the classification threshold from 0.5 to 0.4, recall improved further to 81%. This ensures that most high-risk customers are detected, even though overall accuracy decreases slightly.
+
+---
+
+## Final Model Selection
+
+XGBoost with threshold adjustment (0.4) was selected as the final model.
+
+Although Logistic Regression achieved higher accuracy, churn prediction prioritizes recall over accuracy. Missing a churn customer has higher business cost than incorrectly flagging a loyal one.
+
+The final model achieves:
+
+•⁠  ⁠High churn detection rate (81% recall)
+•⁠  ⁠Improved identification of high-risk customers
+•⁠  ⁠Business-aligned performance optimization
 
 ---
 
