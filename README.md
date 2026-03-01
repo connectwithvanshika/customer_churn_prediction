@@ -94,11 +94,16 @@ The following preprocessing steps were performed:
 - Removed irrelevant column: `customerID`
 - Converted `TotalCharges` to numeric and handled missing values
 - Dropped 11 rows with zero tenure
-- Label encoded categorical features
-- Standardized numerical features:
-  - tenure
-  - MonthlyCharges
-  - TotalCharges
+Categorical features were label encoded using `LabelEncoder` and the encoders were saved using joblib for deployment consistency.
+
+Numerical features (`tenure`, `MonthlyCharges`, `TotalCharges`) were standardized using `StandardScaler`.
+
+Class imbalance was handled in the XGBoost model using the `scale_pos_weight` parameter to improve recall for churn customers.
+
+Preprocessing artifacts saved:
+- encoders.pkl
+- scaler.pkl
+- feature_order.pkl
 - Stratified train-test split to handle class imbalance
 - Saved preprocessing artifacts:
   - encoders.pkl
