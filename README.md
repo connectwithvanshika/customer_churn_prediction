@@ -113,7 +113,12 @@ Preprocessing artifacts saved:
 
 ---
 
-## 5. Model Performance
+## 5. Key Churn Drivers & Data Insights
+<img width="814" height="519" alt="Screenshot 2026-03-01 at 20 23 56" src="https://github.com/user-attachments/assets/73b20358-c436-4b6f-8f25-36642a904f27" />
+
+
+
+## 6. Model Performance
 
 Three models were evaluated using a stratified train-test split (70:30).
 
@@ -175,7 +180,7 @@ The final model achieves:
 
 ---
 
-## 6. Threshold Optimization
+## 7. Threshold Optimization
 
 The default classification threshold (0.5) was reduced to 0.4 to improve recall for churn customers.
 
@@ -201,7 +206,7 @@ threshold.pkl
 
 ---
 
-## 7. Key Churn Drivers Identified
+## 8. Key Churn Drivers Identified
 
 EDA revealed strong predictors of churn:
 
@@ -216,7 +221,7 @@ Gender showed minimal impact on churn.
 
 ---
 
-## 8. Streamlit Deployment
+## 9. Streamlit Deployment
 
 A production-ready Streamlit application was developed.
 
@@ -238,7 +243,7 @@ The application correctly:
 
 ---
 
-## 9. Project Architecture
+## 10. Project Architecture
 
 ### Milestone 1 Architecture
 
@@ -250,7 +255,7 @@ User Query → Risk Assessment → RAG Retrieval → Strategy Planning → Struc
 
 ---
 
-## 10. Project Structure
+## 11. Project Structure
 
 ```
 customer_churn_prediction/
@@ -274,7 +279,7 @@ customer_churn_prediction/
 
 ---
 
-## 11. Technology Stack
+## 12. Technology Stack
 
 | Component | Technology |
 |------------|------------|
@@ -293,7 +298,7 @@ Planned for Milestone 2:
 
 ---
 
-## 12. Milestone Deliverables
+## 13. Milestone Deliverables
 
 ### Milestone 1 (Completed)
 
@@ -317,7 +322,7 @@ Planned for Milestone 2:
 
 ---
 
-## 13. Future Improvements
+## 14. Future Improvements
 
 - Feature importance visualization in UI
 - SHAP explanations for transparency
