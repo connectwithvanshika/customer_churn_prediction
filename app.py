@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 import numpy as np
 
-# ── Page config ──────────────────────────────────────────────────
+# ── Page configuration ──────────────────────────────────────────────────
 st.set_page_config(
     page_title="Customer Churn Intelligence System",
     page_icon="✦",
@@ -252,7 +252,7 @@ html, body, [data-testid="stAppViewContainer"], section.main {
 """, unsafe_allow_html=True)
 
 
-# HERO
+# HERO SECTION
 st.markdown("""
 <div class="hero">
   <div class="badge">✦ ML-Powered Analytics</div>
