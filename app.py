@@ -343,7 +343,15 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 
 if run:
+    # Input validation to prevent invalid numeric values
+    if monthly < 0 or total_c < 0:
+        st.warning("Charges cannot be negative.")
+        st.stop()
 
+    if tenure < 0:
+        st.warning("Tenure cannot be negative.")
+        st.stop()
+        
     enc = {
         "gender": encoders["gender"].transform([gender])[0],
         "SeniorCitizen": encoders["SeniorCitizen"].transform([senior])[0],
