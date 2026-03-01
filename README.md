@@ -32,16 +32,16 @@ The system will be extended into an intelligent agent that:
 
 ---
 
-## 2. Business Problem
+## 2.Problem Statement
 
-Customer churn significantly impacts subscription-based businesses. Acquiring a new customer costs up to five times more than retaining an existing one.
+Customer churn is a critical issue for subscription-based businesses because losing existing customers directly impacts revenue and long-term growth. Acquiring new customers is significantly more expensive than retaining current ones.
 
 The objective of this project is to:
 
-- Predict churn probability accurately
-- Identify key churn drivers
-- Enable targeted retention strategies
-- Transition from predictive analytics to intelligent intervention
+- Predict customers who are likely to churn
+- Identify key factors contributing to churn
+- Support proactive and data-driven retention strategies
+- Transition from predictive analytics to intelligent AI-assisted intervention
 
 ---
 
