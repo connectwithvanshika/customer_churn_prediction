@@ -49,7 +49,11 @@ The objective of this project is to:
 
 Dataset: Telco Customer Churn Dataset  
 Total Records: 7043  
-Features: 20 input variables + 1 target variable  
+Features: 20 input variables + 1 target variable
+
+The dataset contained 11 missing values in the `TotalCharges` column. 
+These entries corresponded to customers with zero tenure. 
+Since they represented a very small portion of the dataset, these rows were removed to maintain data consistency.
 
 Target Variable:
 - `Churn` (Yes/No)
