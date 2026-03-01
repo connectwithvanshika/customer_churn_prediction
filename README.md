@@ -266,20 +266,7 @@ Planned for Milestone 2:
 
 ---
 
-## 13. Deployment Requirement
-
-The final system must be publicly hosted.
-
-Localhost-only demonstrations are not accepted.
-
-Recommended platforms:
-- Streamlit Cloud
-- Hugging Face Spaces
-- Render
-
----
-
-## 14. Future Improvements
+## 13. Future Improvements
 
 - Feature importance visualization in UI
 - SHAP explanations for transparency
@@ -290,7 +277,7 @@ Recommended platforms:
 
 ---
 
-## 15. Conclusion
+## 14. Conclusion
 
 This project successfully implements a complete churn prediction pipeline from raw dataset to deployed interactive application.
 
