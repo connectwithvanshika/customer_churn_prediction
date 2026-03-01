@@ -46,6 +46,14 @@ def load_encoders():
         st.error("Error loading encoders file: 'encoders.pkl'")
         st.stop()
 
+@st.cache_resource
+def load_feature_order():
+    try:
+        return joblib.load("feature_order.pkl")
+    except Exception:
+        st.error("Error loading feature_order.pkl")
+        st.stop()
+
 model     = load_model()
 scaler    = load_scaler()
 threshold = load_threshold()
@@ -359,7 +367,7 @@ if run:
     }
 
     input_df = pd.DataFrame([enc])
-    feature_order = joblib.load("feature_order.pkl")
+    feature_order = load_feature_order()
     input_df = input_df[feature_order]
     num_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
     input_df[num_cols] = scaler.transform(input_df[num_cols])
