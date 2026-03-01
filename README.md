@@ -177,7 +177,7 @@ The final model achieves:
 
 ## 6. Threshold Optimization
 
-Default classification threshold (0.5) was adjusted to improve recall.
+The default classification threshold (0.5) was reduced to 0.4 to improve recall for churn customers.
 
 Instead of:
 
