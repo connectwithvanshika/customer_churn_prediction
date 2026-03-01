@@ -252,7 +252,7 @@ html, body, [data-testid="stAppViewContainer"], section.main {
 """, unsafe_allow_html=True)
 
 
-# HERO SECTION
+# ----HERO SECTION----
 st.markdown("""
 <div class="hero">
   <div class="badge">✦ ML-Powered Analytics</div>
@@ -269,7 +269,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# INPUT SECTION
+# ----INPUT SECTION----
 st.markdown('<div class="section-label">Customer Profile Input</div>', unsafe_allow_html=True)
 
 c1, c2, c3 = st.columns(3)
