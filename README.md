@@ -292,3 +292,4 @@ The system:
 - Is extensible toward autonomous AI decision systems
 
 This demonstrates practical application of machine learning in business analytics and lays the foundation for intelligent AI-driven customer retention systems.
+Developed by Team RetainX AI
