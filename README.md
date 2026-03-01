@@ -294,3 +294,9 @@ The system:
 This demonstrates practical application of machine learning in business analytics and lays the foundation for intelligent AI-driven customer retention systems.
 
 Developed by Team RetainX AI
+
+Team Members 
+1. Vanshika Yadav 
+2. ⁠Riya Garg 
+3. ⁠Sankalp 
+4. ⁠Ronit Singh
