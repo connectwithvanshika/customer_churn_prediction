@@ -1,161 +1,307 @@
-# TELECOM CUSTOMER CHURN PREDICTION
+# Project 5: Customer Churn Prediction & Agentic Retention Strategy
 
-## Project Overview
-
-Customer acquisition costs significantly more than retaining an existing customer. In subscription-based industries such as telecommunications, predicting customer churn is critical for protecting revenue and sustaining long-term growth.
-
-This project builds a machine learning model to predict whether a customer is likely to churn based on demographic information, service usage patterns, billing details, and contract type.
-
-The final selected model is XGBoost, chosen based on its superior recall performance for churn prediction.
+## From Predictive Analytics to Intelligent Intervention
 
 ---
 
-## Dataset Information
+## 1. Project Overview
 
-Dataset: Telco Customer Churn  
-Total Records: 7,043  
-Total Features: 21  
+This project presents the design and implementation of an AI-driven customer analytics system that predicts customer churn and evolves into an agentic AI-powered retention strategist.
 
-### Target Variable
-- Churn  
-  - 0 → Customer retained  
-  - 1 → Customer churned  
+The system is divided into two milestones:
 
-The dataset includes:
+### Milestone 1: ML-Based Churn Prediction
 
-- Customer demographics (gender, senior citizen, partner, dependents)
-- Account information (tenure, contract type, payment method, billing details)
-- Services subscribed (internet service, phone service, tech support, online security, streaming services)
+A classical machine learning pipeline was developed to predict whether a telecom customer is likely to churn based on:
+
+- Service usage
+- Contract type
+- Billing details
+- Demographic attributes
+
+The goal is to identify high-risk customers early so that proactive retention strategies can be applied.
+
+### Milestone 2: Agentic Retention Strategist (Extension)
+
+The system will be extended into an intelligent agent that:
+
+- Reasons about churn probability
+- Retrieves retention best practices using RAG (Retrieval Augmented Generation)
+- Generates structured intervention strategies
+- Plans retention workflows autonomously
 
 ---
 
-## Data Cleaning and Preprocessing
+## 2. Business Problem
+
+Customer churn significantly impacts subscription-based businesses. Acquiring a new customer costs up to five times more than retaining an existing one.
+
+The objective of this project is to:
+
+- Predict churn probability accurately
+- Identify key churn drivers
+- Enable targeted retention strategies
+- Transition from predictive analytics to intelligent intervention
+
+---
+
+## 3. Dataset Information
+
+Dataset: Telco Customer Churn Dataset  
+Total Records: 7043  
+Features: 20 input variables + 1 target variable  
+
+Target Variable:
+- `Churn` (Yes/No)
+
+Feature Categories:
+
+1. Customer Demographics
+   - Gender
+   - SeniorCitizen
+   - Partner
+   - Dependents
+
+2. Services Subscribed
+   - PhoneService
+   - MultipleLines
+   - InternetService
+   - OnlineSecurity
+   - OnlineBackup
+   - DeviceProtection
+   - TechSupport
+   - StreamingTV
+   - StreamingMovies
+
+3. Account Information
+   - Tenure
+   - Contract
+   - PaperlessBilling
+   - PaymentMethod
+   - MonthlyCharges
+   - TotalCharges
+
+---
+
+## 4. Data Preprocessing
 
 The following preprocessing steps were performed:
 
-- Removed irrelevant identifier column (`customerID`)
-- Converted `TotalCharges` to numeric datatype
-- Handled 11 missing values
-- Encoded categorical variables using LabelEncoder
-- Standardized numerical features using StandardScaler
-- Performed stratified train-test split to preserve class distribution
-
-These steps ensured consistent, clean, and model-ready data.
-
----
-
-## Exploratory Data Analysis (EDA) – Key Insights
-
-- Customers with month-to-month contracts show the highest churn rates.
-- Fiber optic users exhibit higher churn compared to DSL users.
-- Customers without Tech Support or Online Security are more likely to churn.
-- High Monthly Charges increase churn probability.
-- Customers with lower tenure churn more frequently.
-- Electronic check payment method is associated with higher churn.
-- Gender has minimal impact on churn behavior.
-
-These insights helped guide model interpretation and feature importance analysis.
+- Removed irrelevant column: `customerID`
+- Converted `TotalCharges` to numeric and handled missing values
+- Dropped 11 rows with zero tenure
+- Label encoded categorical features
+- Standardized numerical features:
+  - tenure
+  - MonthlyCharges
+  - TotalCharges
+- Stratified train-test split to handle class imbalance
+- Saved preprocessing artifacts:
+  - encoders.pkl
+  - scaler.pkl
+  - feature_order.pkl
 
 ---
 
-## Model Training and Evaluation
+## 5. Model Development
 
-The following models were trained and compared:
+Three models were trained and evaluated:
 
 - Logistic Regression
 - Decision Tree
-- XGBoost
+- XGBoost (Final Selected Model)
 
-Evaluation metrics used:
+### Why XGBoost?
 
-- Accuracy
-- Precision
-- Recall
-- F1-score
-- Confusion Matrix
+Although Logistic Regression showed slightly higher accuracy, XGBoost achieved the highest recall for churn customers.
 
----
+Recall is prioritized in churn prediction because missing a potential churn customer is more costly than incorrectly flagging a loyal one.
 
-## Why Recall Is More Important Than Accuracy in Churn Prediction
-
-In churn prediction, the primary objective is to identify customers who are likely to leave.
-
-Accuracy alone can be misleading in imbalanced datasets. For example, if most customers do not churn, a model predicting “No Churn” for all customers may achieve high accuracy but fail to detect actual churners.
-
-Recall (for the churn class) measures:
-
-Out of all actual churn customers, how many were correctly identified?
-
-High recall ensures:
-
-- Fewer churners are missed
-- High-risk customers are identified early
-- Retention strategies can be applied proactively
-- Revenue loss is minimized
-
-Since the business goal is to reduce customer attrition, maximizing recall is more important than maximizing overall accuracy.
+Key Metrics (XGBoost):
+- High recall for churn class
+- Balanced precision-recall tradeoff
+- Improved performance after threshold tuning
 
 ---
 
-## Final Model Selection: XGBoost
+## 6. Threshold Optimization
 
-XGBoost was selected as the final model because:
+Default classification threshold (0.5) was adjusted to improve recall.
 
-- It achieved the highest recall for churn customers (81% after threshold adjustment).
-- It handled class imbalance effectively using `scale_pos_weight`.
-- It provided strong overall classification performance.
-- It generated churn probability scores for actionable business insights.
+Instead of:
 
-Threshold tuning was applied to further improve recall performance.
+```
+prediction = model.predict(X_test)
+```
 
----
+The system uses:
 
-## Churn Probability Prediction
+```
+probabilities = model.predict_proba(X_test)[:,1]
+prediction = (probabilities > 0.4).astype(int)
+```
 
-The model outputs churn probability for each customer.
+This improves churn detection performance.
 
-Example:
-
-Customer 1 → 6.65%  
-Customer 2 → 60.71%  
-Customer 3 → 0.80%  
-
-Customers with higher churn probability can be targeted using:
-
-- Loyalty programs
-- Discount offers
-- Contract upgrades
-- Service improvements
-
-This enables proactive churn prevention.
+Threshold value is saved in:
+```
+threshold.pkl
+```
 
 ---
 
-## Model Deployment
+## 7. Key Churn Drivers Identified
 
-Saved artifacts:
+EDA revealed strong predictors of churn:
 
-- `final_churn_model.pkl` → Trained XGBoost model
-- `threshold.pkl` → Optimized classification threshold
+- Month-to-month contracts increase churn
+- Electronic check payment method correlates with higher churn
+- Low tenure customers churn more frequently
+- Lack of tech support increases churn probability
+- High monthly charges increase churn risk
+- Customers without online security or backup services churn more
 
-The system is deployment-ready and can be integrated into:
-
-- CRM systems
-- Retention dashboards
-- Automated customer monitoring pipelines
+Gender showed minimal impact on churn.
 
 ---
 
-## Conclusion
+## 8. Streamlit Deployment
 
-This project successfully:
+A production-ready Streamlit application was developed.
 
-- Cleaned and prepared real-world telecom data
-- Conducted detailed exploratory data analysis
-- Addressed class imbalance appropriately
-- Compared multiple machine learning models
-- Selected the final model based on business-relevant metrics
-- Generated churn probability predictions
-- Saved deployment-ready model artifacts
+Features:
 
-The final system enables proactive identification of high-risk customers and supports data-driven retention strategies.
+- Interactive customer profile input
+- Real-time churn probability prediction
+- Custom threshold-based classification
+- Styled UI with responsive layout
+- Probability visualization with progress bar
+- Retention recommendation messaging
+
+The application correctly:
+
+- Applies saved encoders
+- Reorders features to match training
+- Scales numerical columns
+- Uses the saved model and threshold
+
+---
+
+## 9. Project Architecture
+
+### Milestone 1 Architecture
+
+User Input → Encoding → Feature Ordering → Scaling → XGBoost Model → Probability → Threshold Logic → UI Output
+
+### Milestone 2 (Planned Agent Architecture)
+
+User Query → Risk Assessment → RAG Retrieval → Strategy Planning → Structured Retention Report
+
+---
+
+## 10. Project Structure
+
+```
+customer_churn_prediction/
+│
+├── app.py
+├── model_test.py
+├── requirements.txt
+├── README.md
+│
+├── final_churn_model.pkl
+├── scaler.pkl
+├── encoders.pkl
+├── threshold.pkl
+├── feature_order.pkl
+│
+├── WA_Fn-UseC_-Telco-Customer-Churn.csv
+│
+└── notebooks/
+    └── CUSTOMER_CHURN_PREDICTION.ipynb
+```
+
+---
+
+## 11. Technology Stack
+
+| Component | Technology |
+|------------|------------|
+| Data Analysis | Pandas, NumPy |
+| Visualization | Matplotlib, Seaborn, Plotly |
+| ML Models | Scikit-learn, XGBoost |
+| Preprocessing | StandardScaler, LabelEncoder |
+| Deployment | Streamlit |
+| Model Storage | Joblib |
+
+Planned for Milestone 2:
+- LangGraph
+- Chroma or FAISS
+- Open-source LLM (Free tier)
+- Hosted deployment (Hugging Face / Streamlit Cloud / Render)
+
+---
+
+## 12. Milestone Deliverables
+
+### Milestone 1 (Completed)
+
+- Business understanding
+- EDA and feature engineering
+- Model comparison
+- Threshold optimization
+- Working local Streamlit application
+- Model artifacts saved
+- Performance evaluation report
+
+### Milestone 2 (Planned)
+
+- Agentic retention strategist
+- RAG-based best practice retrieval
+- Structured retention reports
+- Public deployment link
+- Agent workflow documentation
+- GitHub repository
+- Demo video
+
+---
+
+## 13. Deployment Requirement
+
+The final system must be publicly hosted.
+
+Localhost-only demonstrations are not accepted.
+
+Recommended platforms:
+- Streamlit Cloud
+- Hugging Face Spaces
+- Render
+
+---
+
+## 14. Future Improvements
+
+- Feature importance visualization in UI
+- SHAP explanations for transparency
+- Dynamic threshold tuning
+- Customer segmentation module
+- Agentic reasoning layer using LangGraph
+- Automated retention playbook generation
+
+---
+
+## 15. Conclusion
+
+This project successfully implements a complete churn prediction pipeline from raw dataset to deployed interactive application.
+
+It transitions from classical machine learning to the foundation of an agent-based intelligent retention strategist.
+
+The system:
+
+- Identifies high-risk customers
+- Provides probability-based insights
+- Enables proactive intervention
+- Is deployment-ready
+- Is extensible toward autonomous AI decision systems
+
+This demonstrates practical application of machine learning in business analytics and lays the foundation for intelligent AI-driven customer retention systems.
