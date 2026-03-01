@@ -376,6 +376,10 @@ if run:
       prob = float(model.predict_proba(input_df)[0][1])
     will_churn = prob >= threshold
 
+    # Confidence score shows how strongly the model believes in prediction
+    confidence = abs(prob - 0.5) * 2
+    st.write(f"Model Confidence Score: {confidence:.2f}")
+
     st.markdown('<div class="section-label">Prediction Result</div>', unsafe_allow_html=True)
 
     if will_churn:
