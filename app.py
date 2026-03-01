@@ -386,7 +386,7 @@ if run:
 
     # Confidence score shows how strongly the model believes in prediction
     st.progress(min(prob, 1.0))
-
+    confidence = abs(prob - 0.5) * 2
     st.caption(f"Model Confidence Score: {confidence:.2f}")
 
     st.markdown('<div class="section-label">Prediction Result</div>', unsafe_allow_html=True)
