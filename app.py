@@ -13,19 +13,38 @@ st.set_page_config(
 # ── Load model + scaler + encoders ──────────────────────────────
 @st.cache_resource
 def load_model():
-    return joblib.load("final_churn_model.pkl")
+    try:
+        return joblib.load("final_churn_model.pkl")
+    except Exception:
+        st.error("Error loading model file: 'final_churn_model.pkl'")
+        st.stop()
+
 
 @st.cache_resource
 def load_scaler():
-    return joblib.load("scaler.pkl")
+    try:
+        return joblib.load("scaler.pkl")
+    except Exception:
+        st.error("Error loading scaler file: 'scaler.pkl'")
+        st.stop()
+
 
 @st.cache_resource
 def load_threshold():
-    return float(joblib.load("threshold.pkl"))
+    try:
+        return float(joblib.load("threshold.pkl"))
+    except Exception:
+        st.error("Error loading threshold file: 'threshold.pkl'")
+        st.stop()
+
 
 @st.cache_resource
 def load_encoders():
-    return joblib.load("encoders.pkl")
+    try:
+        return joblib.load("encoders.pkl")
+    except Exception:
+        st.error("Error loading encoders file: 'encoders.pkl'")
+        st.stop()
 
 model     = load_model()
 scaler    = load_scaler()
