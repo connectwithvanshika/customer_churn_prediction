@@ -104,6 +104,7 @@ Preprocessing artifacts saved:
 - encoders.pkl
 - scaler.pkl
 - feature_order.pkl
+
 - Stratified train-test split to handle class imbalance
 - Saved preprocessing artifacts:
   - encoders.pkl
