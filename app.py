@@ -372,7 +372,8 @@ if run:
     num_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
     input_df[num_cols] = scaler.transform(input_df[num_cols])
 
-    prob = float(model.predict_proba(input_df)[0][1])
+    with st.spinner("Running churn prediction..."):
+      prob = float(model.predict_proba(input_df)[0][1])
     will_churn = prob >= threshold
 
     st.markdown('<div class="section-label">Prediction Result</div>', unsafe_allow_html=True)
