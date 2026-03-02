@@ -416,31 +416,47 @@ User Input → Encoding → Feature Ordering → Scaling → XGBoost Model → P
 User Query → Risk Assessment → RAG Retrieval → Strategy Planning → Structured Retention Report
 
 ---
+---
 
 ## 12. Project Structure
+
+The repository is organized to ensure clarity, reproducibility, and deployment readiness.
 
 ```
 customer_churn_prediction/
 │
 ├── .streamlit/
-│   └── config.toml
+│   └── config.toml                 # Streamlit configuration settings
 │
-├── app.py
-├── model_test.py
-├── requirements.txt
-├── README.md
+├── app.py                          # Main Streamlit application
+├── model_test.py                   # Local validation & testing script
+├── requirements.txt                # Project dependencies
+├── README.md                       # Project documentation
 │
-├── final_churn_model.pkl
-├── scaler.pkl
-├── encoders.pkl
-├── threshold.pkl
-├── feature_order.pkl
+├── final_churn_model.pkl           # Trained XGBoost model
+├── scaler.pkl                      # StandardScaler used during training
+├── encoders.pkl                    # LabelEncoders for categorical features
+├── threshold.pkl                   # Optimized classification threshold (0.4)
+├── feature_order.pkl               # Ensures correct feature alignment
 │
-├── WA_Fn-UseC_-Telco-Customer-Churn.csv
+├── WA_Fn-UseC_-Telco-Customer-Churn.csv   # Dataset used for training
 │
 └── notebooks/
-    └── CUSTOMER_CHURN_PREDICTION.ipynb
+    └── CUSTOMER_CHURN_PREDICTION.ipynb    # Full EDA & model development notebook
 ```
+
+### Structure Overview
+
+- **Application Layer** → `app.py`
+- **Model Artifacts** → `.pkl` files for deployment consistency
+- **Validation Layer** → `model_test.py`
+- **Configuration** → `.streamlit/config.toml`
+- **Dataset & Notebook** → Raw data and full ML workflow
+- **Documentation** → README and report files
+
+This structure ensures that the training pipeline, deployment pipeline, and evaluation pipeline remain fully reproducible.
+
+---
 
 ---
 
