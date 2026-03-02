@@ -1,59 +1,93 @@
+"""
+Customer Churn Intelligence System
+-----------------------------------
+This Streamlit application loads a trained XGBoost churn prediction model
+and provides real-time churn probability predictions based on user inputs.
+
+The pipeline ensures:
+- Consistent feature encoding
+- Correct feature ordering
+- Proper numerical scaling
+- Threshold-based classification
+"""
+
 import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
 
-# ── Page config ──────────────────────────────────────────────────
+
+# ── Page Configuration ─────────────────────────────────────────────
+# Sets metadata and layout for the Streamlit application
 st.set_page_config(
     page_title="Customer Churn Intelligence System",
     page_icon="✦",
     layout="wide",
 )
-
-# ── Load model + scaler + encoders ──────────────────────────────
 @st.cache_resource
 def load_model():
+    """
+    Loads the trained XGBoost model from disk.
+    Stops the app if the model file is not found.
+    """
     try:
-        return joblib.load("final_churn_model.pkl")
+        return joblib.load("models/final_churn_model.pkl")
     except Exception:
-        st.error("Error loading model file: 'final_churn_model.pkl'")
+        st.error("Error loading model file: 'models/final_churn_model.pkl'")
         st.stop()
 
 
 @st.cache_resource
 def load_scaler():
+    """
+    Loads the StandardScaler used during training.
+    Ensures consistent scaling between training and inference.
+    """
     try:
-        return joblib.load("scaler.pkl")
+        return joblib.load("models/scaler.pkl")
     except Exception:
-        st.error("Error loading scaler file: 'scaler.pkl'")
+        st.error("Error loading scaler file: 'models/scaler.pkl'")
         st.stop()
-
 
 @st.cache_resource
 def load_threshold():
+    """
+    Loads the optimized classification threshold.
+    Threshold (0.4) was chosen to prioritize recall over accuracy.
+    """
     try:
-        return float(joblib.load("threshold.pkl"))
+        return float(joblib.load("models/threshold.pkl"))
     except Exception:
-        st.error("Error loading threshold file: 'threshold.pkl'")
+        st.error("Error loading threshold file: 'models/threshold.pkl'")
         st.stop()
 
 
 @st.cache_resource
 def load_encoders():
+    """
+    Loads saved LabelEncoders for categorical features.
+    Ensures consistent mapping between training and deployment.
+    """
     try:
-        return joblib.load("encoders.pkl")
+        return joblib.load("models/encoders.pkl")
     except Exception:
-        st.error("Error loading encoders file: 'encoders.pkl'")
+        st.error("Error loading encoders file: 'models/encoders.pkl'")
         st.stop()
 
 @st.cache_resource
 def load_feature_order():
+    """
+    Loads feature ordering used during model training.
+    Prevents feature misalignment during prediction.
+    """
     try:
-        return joblib.load("feature_order.pkl")
+        return joblib.load("models/feature_order.pkl")
     except Exception:
         st.error("Error loading feature_order.pkl")
         st.stop()
 
+
+# Load all required artifacts
 model     = load_model()
 scaler    = load_scaler()
 threshold = load_threshold()
@@ -296,7 +330,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# INPUT SECTION
+# ── User Input Section ─────────────────────────────────────────────
+# Collects structured customer profile information
 st.markdown('<div class="section-label">Customer Profile Input</div>', unsafe_allow_html=True)
 
 c1, c2, c3 = st.columns(3)
@@ -335,6 +370,7 @@ with c5:
     monthly = st.slider("Monthly Charges ($)", 18.0, 120.0, 70.0, 0.5)
     total_c = st.slider("Total Charges ($)", 18.0, 9000.0, 1500.0, 50.0)
 
+# ── Prediction Trigger ─────────────────────────────────────────────
 
 st.markdown("<br>", unsafe_allow_html=True)
 st.markdown('<div class="predict-wrap">', unsafe_allow_html=True)
@@ -351,6 +387,10 @@ if run:
     if tenure < 0:
         st.warning("Tenure cannot be negative.")
         st.stop()
+
+    
+    # Encode categorical variables using saved encoders
+    # Ensures deployment uses same encoding scheme as training
 
     enc = {
         "gender": encoders["gender"].transform([gender])[0],
@@ -374,23 +414,38 @@ if run:
         "TotalCharges": total_c,
     }
 
+
+    # Convert input dictionary into DataFrame
     input_df = pd.DataFrame([enc])
+
+    # Ensure feature ordering matches training pipeline
     feature_order = load_feature_order()
     input_df = input_df[feature_order]
+
+    # Scale numerical columns using saved StandardScaler
     num_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
     input_df[num_cols] = scaler.transform(input_df[num_cols])
 
+
+
+    # Predict churn probability
     with st.spinner("Running churn prediction..."):
       prob = float(model.predict_proba(input_df)[0][1])
+
+    # Apply optimized threshold (0.4) instead of default 0.5
     will_churn = prob >= threshold
 
     # Confidence score shows how strongly the model believes in prediction
     st.progress(min(prob, 1.0))
+
+    # Confidence score indicates distance from decision boundary (0.5)
     confidence = abs(prob - 0.5) * 2
     st.caption(f"Model Confidence Score: {confidence:.2f}")
 
     st.markdown('<div class="section-label">Prediction Result</div>', unsafe_allow_html=True)
 
+
+    # Classification Output
     if will_churn:
         st.markdown("""
         <div class="result-card">
