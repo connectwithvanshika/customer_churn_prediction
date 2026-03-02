@@ -293,7 +293,119 @@ Example local test output:
 
 ---
 
-## 10. Project Architecture
+---
+
+## 10. How to Run & Use This Project
+
+This project can be executed locally using Streamlit.
+
+Follow the steps below to run the application on your system.
+
+---
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/connectwithvanshika/customer_churn_prediction.git
+cd customer_churn_prediction
+```
+
+---
+
+### Step 2: Install Required Dependencies
+
+It is recommended to use a virtual environment.
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+### Step 3: Run the Streamlit Application
+
+```bash
+streamlit run app.py
+```
+
+The application will automatically open in your browser at:
+
+```
+http://localhost:8501
+```
+
+---
+
+## How the System Works Internally
+
+When a user enters customer details in the UI and clicks **Run Churn Prediction**, the system performs the following steps:
+
+1. Categorical features are encoded using the saved `encoders.pkl`
+2. Feature order is aligned using `feature_order.pkl`
+3. Numerical features are scaled using `scaler.pkl`
+4. The trained `XGBoost` model generates churn probability
+5. The saved threshold (`threshold.pkl`) is applied
+6. The final churn prediction and confidence score are displayed in the UI
+
+This ensures prediction consistency between training and deployment environments.
+
+---
+
+## Example Usage Flow
+
+1. Enter customer profile details (contract, tenure, payment method, services, etc.)
+2. Click **Run Churn Prediction**
+3. The system outputs:
+
+   - Churn Probability Score
+   - Model Confidence Score
+   - Risk Classification (Likely to Stay / Likely to Churn)
+   - Retention Recommendation Message
+
+This allows proactive and data-driven retention decisions.
+
+---
+
+## Using the Model Programmatically (Optional)
+
+You can also use the trained model directly in Python:
+
+```python
+import joblib
+import numpy as np
+
+# Load saved artifacts
+model = joblib.load("final_churn_model.pkl")
+scaler = joblib.load("scaler.pkl")
+encoders = joblib.load("encoders.pkl")
+threshold = joblib.load("threshold.pkl")
+
+# Example: pass processed feature array
+probability = model.predict_proba(X_sample)[:, 1]
+prediction = (probability > threshold).astype(int)
+
+print("Churn Probability:", probability)
+print("Final Prediction:", prediction)
+```
+
+---
+
+## Deployment-Ready Artifacts
+
+The following artifacts are saved to ensure reproducibility:
+
+- `final_churn_model.pkl`
+- `scaler.pkl`
+- `encoders.pkl`
+- `threshold.pkl`
+- `feature_order.pkl`
+
+These guarantee that the deployed application produces predictions identical to the training environment.
+
+---
+
+
+## 11. Project Architecture
 
 ### Milestone 1 Architecture
 
@@ -305,10 +417,13 @@ User Query → Risk Assessment → RAG Retrieval → Strategy Planning → Struc
 
 ---
 
-## 11. Project Structure
+## 12. Project Structure
 
 ```
 customer_churn_prediction/
+│
+├── .streamlit/
+│   └── config.toml
 │
 ├── app.py
 ├── model_test.py
@@ -329,7 +444,7 @@ customer_churn_prediction/
 
 ---
 
-## 12. Technology Stack
+## 13. Technology Stack
 
 | Component | Technology |
 |------------|------------|
@@ -348,7 +463,7 @@ Planned for Milestone 2:
 
 ---
 
-## 13. Milestone Deliverables
+## 14. Milestone Deliverables
 
 ### Milestone 1 (Completed)
 
@@ -372,7 +487,7 @@ Planned for Milestone 2:
 
 ---
 
-## 14. Future Improvements
+## 15. Future Improvements
 
 - Feature importance visualization in UI
 - SHAP explanations for transparency
@@ -383,7 +498,7 @@ Planned for Milestone 2:
 
 ---
 
-## 15. Conclusion
+## 16. Conclusion
 
 This project successfully implements a complete churn prediction pipeline from raw dataset to deployed interactive application.
 
