@@ -425,24 +425,35 @@ The repository is organized to ensure clarity, reproducibility, and deployment r
 ```
 customer_churn_prediction/
 │
-├── .streamlit/
-│   └── config.toml                 # Streamlit configuration settings
+├── app.py                         # Streamlit deployment application
+├── model_test.py                  # Local validation & testing script
+├── requirements.txt               # Project dependencies
+├── README.md                      # Project documentation
+├── .gitignore                     # Version control exclusions
 │
-├── app.py                          # Main Streamlit application
-├── model_test.py                   # Local validation & testing script
-├── requirements.txt                # Project dependencies
-├── README.md                       # Project documentation
+├── .streamlit/                    # Streamlit configuration
+│   └── config.toml
 │
-├── final_churn_model.pkl           # Trained XGBoost model
-├── scaler.pkl                      # StandardScaler used during training
-├── encoders.pkl                    # LabelEncoders for categorical features
-├── threshold.pkl                   # Optimized classification threshold (0.4)
-├── feature_order.pkl               # Ensures correct feature alignment
+├── models/                        # Saved ML artifacts
+│   ├── final_churn_model.pkl
+│   ├── scaler.pkl
+│   ├── encoders.pkl
+│   ├── threshold.pkl
+│   └── feature_order.pkl
 │
-├── WA_Fn-UseC_-Telco-Customer-Churn.csv   # Dataset used for training
+├── Raw_Dataset/                   # Original dataset
+│   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
 │
-└── notebooks/
-    └── CUSTOMER_CHURN_PREDICTION.ipynb    # Full EDA & model development notebook
+├── notebook/                      # Development notebook
+│   └── CUSTOMER_CHURN_PREDICTION.ipynb
+│
+├── images/                        # UI & visualization assets
+│   ├── UI_1.png
+│   └── UI_2.png
+│
+├── EDA Insights/                  # Visual EDA outputs
+│
+└── Report/                        # Final project report
 ```
 
 ### Structure Overview
