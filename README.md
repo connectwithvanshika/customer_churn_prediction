@@ -425,35 +425,33 @@ The repository is organized to ensure clarity, reproducibility, and deployment r
 ```
 customer_churn_prediction/
 │
-├── app.py                         # Streamlit deployment application
-├── model_test.py                  # Local validation & testing script
-├── requirements.txt               # Project dependencies
-├── README.md                      # Project documentation
-├── .gitignore                     # Version control exclusions
+├── app.py                               # Streamlit deployment application
+├── model_test.py                        # Local validation & model testing script
+├── requirements.txt                     # Project dependencies
+├── README.md                            # Project documentation
+├── .gitignore                           # Version control exclusions
 │
-├── .streamlit/                    # Streamlit configuration
+├── .streamlit/                          # Streamlit configuration settings
 │   └── config.toml
 │
-├── models/                        # Saved ML artifacts
+├── Raw_Dataset/                         # Original dataset used for training
+│   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
+│
+├── notebook_&_otherpkl/                 # Development notebook & saved model artifacts
+│   ├── CUSTOMER_CHURN_PREDICTION_Gen_AI_Project.ipynb
 │   ├── final_churn_model.pkl
 │   ├── scaler.pkl
 │   ├── encoders.pkl
 │   ├── threshold.pkl
 │   └── feature_order.pkl
 │
-├── Raw_Dataset/                   # Original dataset
-│   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
+├── EDA Insights/                        # Saved EDA visualizations & analysis outputs
 │
-├── notebook/                      # Development notebook
-│   └── CUSTOMER_CHURN_PREDICTION.ipynb
-│
-├── images/                        # UI & visualization assets
+├── images/                              # UI screenshots & dashboard visuals
 │   ├── UI_1.png
 │   └── UI_2.png
 │
-├── EDA Insights/                  # Visual EDA outputs
-│
-└── Report/                        # Final project report
+└── Report/                              # Final structured project report
 ```
 
 ### Structure Overview
