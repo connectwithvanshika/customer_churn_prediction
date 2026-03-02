@@ -539,6 +539,22 @@ The system:
 
 This demonstrates practical application of machine learning in business analytics and lays the foundation for intelligent AI-driven customer retention systems.
 
+## Dataset Source
+IBM Sample Data Sets. Telco Customer Churn Dataset. Kaggle. Available at:
+https://www.kaggle.com/datasets/blastchar/telco-customer-churn
+
+## Libraries & Tools
+• Pedregosa, F., et al. (2011). Scikit-learn: Machine Learning in Python. JMLR, 12, 2825–2830.
+• Chen, T., & Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System. ACM SIGKDD.
+• McKinney, W. (2010). Data Structures for Statistical Computing in Python. SciPy Conference.
+• Hunter, J. D. (2007). Matplotlib: A 2D Graphics Environment. Computing in Science & Engineering, 9(3).
+• Plotly Technologies Inc. Plotly Python Graphing Library. https://plotly.com/python/
+• Streamlit Inc. Streamlit: The fastest way to build data apps. https://streamlit.io
+
+## Live Resources
+1. Live Colab Notebook - [https://colab.research.google.com/drive/1qUUYKSU4QDwKlGH_H9j1Cr2NyEKXcqIA?usp=sharing]
+2. Dataset (Kaggle) - [https://www.kaggle.com/datasets/blastchar/telco-customer-churn]
+
 Developed by Team RetainX AI
 
 Team Members 
