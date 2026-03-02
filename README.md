@@ -178,6 +178,40 @@ The final model achieves:
 •⁠  ⁠Improved identification of high-risk customers
 •⁠  ⁠Business-aligned performance optimization
 
+## Additional Evaluation Metrics (MAE, RMSE & ROC-AUC)
+
+Although churn prediction is a classification task, additional error metrics were computed for comparative evaluation.
+Error-Based Metrics (Binary Representation)
+
+Logistic Regression
+• MAE: 0.20
+• RMSE: 0.447
+
+Decision Tree
+• MAE: 0.222
+• RMSE: 0.471
+
+XGBoost (Threshold 0.5)
+• MAE: 0.248
+• RMSE: 0.498
+
+XGBoost (Threshold 0.4 – Final Model)
+• MAE: 0.282
+• RMSE: 0.531
+
+Interpretation:
+
+MAE represents the proportion of incorrect predictions.
+RMSE penalizes larger prediction errors more strongly.
+
+The final model shows slightly higher MAE due to recall prioritization, which intentionally increases false positives in order to detect more churn customers.
+
+## ROC-AUC Score (Model Discrimination Ability)
+
+XGBoost ROC-AUC: 0.83
+The ROC-AUC score measures the model’s ability to distinguish between churn and non-churn customers across all classification thresholds.
+A value of 0.83 indicates strong classification capability and confirms that the model effectively separates high-risk and low-risk customers.
+This further validates the robustness of the selected XGBoost model.
 ---
 
 ## 7. Threshold Optimization
