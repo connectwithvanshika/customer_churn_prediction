@@ -183,19 +183,16 @@ The final model achieves:
 Although churn prediction is a classification task, additional error metrics were computed for comparative evaluation.
 Error-Based Metrics (Binary Representation)
 
-Logistic Regression
+1. Logistic Regression
 • MAE: 0.20
 • RMSE: 0.447
-
-Decision Tree
+2. Decision Tree
 • MAE: 0.222
 • RMSE: 0.471
-
-XGBoost (Threshold 0.5)
+3. XGBoost (Threshold 0.5)
 • MAE: 0.248
 • RMSE: 0.498
-
-XGBoost (Threshold 0.4 – Final Model)
+4. XGBoost (Threshold 0.4 – Final Model)
 • MAE: 0.282
 • RMSE: 0.531
 
