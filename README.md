@@ -243,7 +243,29 @@ The application correctly:
 
 ---
 
-## 10. Project Architecture
+## 10. Local Model Testing & Validation
+
+(Before deploying the Streamlit application, the trained XGBoost model was independently tested using a dedicated validation script (model_test.py) to ensure consistency and correctness of predictions.
+
+The testing process verified:
+
+Successful loading of saved model artifacts
+
+Proper encoder alignment
+
+Correct feature ordering
+
+Numerical feature scaling
+
+Threshold-based classification logic
+
+Final churn prediction output
+
+Example local test output:)
+
+---
+
+## 11. Project Architecture
 
 ### Milestone 1 Architecture
 
@@ -255,7 +277,7 @@ User Query → Risk Assessment → RAG Retrieval → Strategy Planning → Struc
 
 ---
 
-## 11. Project Structure
+## 12. Project Structure
 
 ```
 customer_churn_prediction/
@@ -279,7 +301,7 @@ customer_churn_prediction/
 
 ---
 
-## 12. Technology Stack
+## 13. Technology Stack
 
 | Component | Technology |
 |------------|------------|
@@ -298,7 +320,7 @@ Planned for Milestone 2:
 
 ---
 
-## 13. Milestone Deliverables
+## 14. Milestone Deliverables
 
 ### Milestone 1 (Completed)
 
@@ -322,7 +344,7 @@ Planned for Milestone 2:
 
 ---
 
-## 14. Future Improvements
+## 15. Future Improvements
 
 - Feature importance visualization in UI
 - SHAP explanations for transparency
@@ -333,7 +355,7 @@ Planned for Milestone 2:
 
 ---
 
-## 14. Conclusion
+## 16. Conclusion
 
 This project successfully implements a complete churn prediction pipeline from raw dataset to deployed interactive application.
 
