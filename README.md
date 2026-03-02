@@ -263,6 +263,8 @@ Final churn prediction output
 
 Example local test output:)
 
+<img width="838" height="370" alt="image" src="https://github.com/user-attachments/assets/07d625e6-4d6c-4519-821e-66bbe7dbaaf0" />
+
 ---
 
 ## 11. Project Architecture
