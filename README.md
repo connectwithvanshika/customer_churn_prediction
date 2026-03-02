@@ -119,6 +119,7 @@ Preprocessing artifacts saved:
 
 
 ## 6. Model Performance
+# 6.1 Classification Metrics
 
 Three models were evaluated using a stratified train-test split (70:30).
 
@@ -166,7 +167,7 @@ After lowering the classification threshold from 0.5 to 0.4, recall improved fur
 
 ---
 
-## Final Model Selection
+## 6.2 Final Model Selection
 
 XGBoost with threshold adjustment (0.4) was selected as the final model.
 
@@ -178,7 +179,7 @@ The final model achieves:
 •⁠  ⁠Improved identification of high-risk customers
 •⁠  ⁠Business-aligned performance optimization
 
-## Additional Evaluation Metrics (MAE, RMSE & ROC-AUC)
+## 6.3 Error-Based Metrics (MAE, RMSE)
 
 Although churn prediction is a classification task, additional error metrics were computed for comparative evaluation.
 Error-Based Metrics (Binary Representation)
@@ -203,15 +204,14 @@ RMSE penalizes larger prediction errors more strongly.
 
 The final model shows slightly higher MAE due to recall prioritization, which intentionally increases false positives in order to detect more churn customers.
 
-## ROC-AUC Score (Model Discrimination Ability)
+## 6.4 ROC-AUC Analysis
 
-XGBoost ROC-AUC: 0.83
-The ROC-AUC score measures the model’s ability to distinguish between churn and non-churn customers across all classification thresholds.
-A value of 0.83 indicates strong classification capability and confirms that the model effectively separates high-risk and low-risk customers.
-This further validates the robustness of the selected XGBoost model.
----
+1. XGBoost ROC-AUC: 0.83
+2. The ROC-AUC score measures the model’s ability to distinguish between churn and non-churn customers across all classification thresholds.
+3. A value of 0.83 indicates strong classification capability and confirms that the model effectively separates high-risk and low-risk customers.
+4. This further validates the robustness of the selected XGBoost model.
 
-## 7. Threshold Optimization
+## 6.5 Threshold Optimization
 
 The default classification threshold (0.5) was reduced to 0.4 to improve recall for churn customers.
 
@@ -237,7 +237,7 @@ threshold.pkl
 
 ---
 
-## 8. Key Churn Drivers Identified
+## 7. Key Churn Drivers Identified
 
 EDA revealed strong predictors of churn:
 
@@ -252,7 +252,7 @@ Gender showed minimal impact on churn.
 
 ---
 
-## 9. Streamlit Deployment
+## 8. Streamlit Deployment
 
 A production-ready Streamlit application was developed.
 
@@ -274,7 +274,7 @@ The application correctly:
 
 ---
 
-## 10. Local Model Testing & Validation
+## 9. Local Model Testing & Validation
 
 (Before deploying the Streamlit application, the trained XGBoost model was independently tested using a dedicated validation script (model_test.py) to ensure consistency and correctness of predictions.
 
@@ -293,7 +293,7 @@ Example local test output:
 
 ---
 
-## 11. Project Architecture
+## 10. Project Architecture
 
 ### Milestone 1 Architecture
 
@@ -305,7 +305,7 @@ User Query → Risk Assessment → RAG Retrieval → Strategy Planning → Struc
 
 ---
 
-## 12. Project Structure
+## 11. Project Structure
 
 ```
 customer_churn_prediction/
@@ -329,7 +329,7 @@ customer_churn_prediction/
 
 ---
 
-## 13. Technology Stack
+## 12. Technology Stack
 
 | Component | Technology |
 |------------|------------|
@@ -348,7 +348,7 @@ Planned for Milestone 2:
 
 ---
 
-## 14. Milestone Deliverables
+## 13. Milestone Deliverables
 
 ### Milestone 1 (Completed)
 
@@ -372,7 +372,7 @@ Planned for Milestone 2:
 
 ---
 
-## 15. Future Improvements
+## 14. Future Improvements
 
 - Feature importance visualization in UI
 - SHAP explanations for transparency
@@ -383,7 +383,7 @@ Planned for Milestone 2:
 
 ---
 
-## 16. Conclusion
+## 15. Conclusion
 
 This project successfully implements a complete churn prediction pipeline from raw dataset to deployed interactive application.
 
