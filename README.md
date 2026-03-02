@@ -249,19 +249,14 @@ The application correctly:
 
 The testing process verified:
 
-Successful loading of saved model artifacts
+1. Successful loading of saved model artifacts
+2. Proper encoder alignment
+3. Correct feature ordering
+4. Numerical feature scaling
+5. Threshold-based classification logic
+6. Final churn prediction output
 
-Proper encoder alignment
-
-Correct feature ordering
-
-Numerical feature scaling
-
-Threshold-based classification logic
-
-Final churn prediction output
-
-Example local test output:)
+Example local test output:
 
 <img width="838" height="370" alt="image" src="https://github.com/user-attachments/assets/07d625e6-4d6c-4519-821e-66bbe7dbaaf0" />
 
