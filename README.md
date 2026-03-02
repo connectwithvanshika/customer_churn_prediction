@@ -118,8 +118,8 @@ Preprocessing artifacts saved:
 
 
 
-## 6. Model Performance
-# 6.1 Classification Metrics
+# 6. Model Performance
+## 6.1 Classification Metrics
 
 Three models were evaluated using a stratified train-test split (70:30).
 
