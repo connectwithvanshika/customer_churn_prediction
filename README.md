@@ -554,6 +554,8 @@ https://www.kaggle.com/datasets/blastchar/telco-customer-churn
 ## Live Resources
 1. Live Colab Notebook - [https://colab.research.google.com/drive/1qUUYKSU4QDwKlGH_H9j1Cr2NyEKXcqIA?usp=sharing]
 2. Dataset (Kaggle) - [https://www.kaggle.com/datasets/blastchar/telco-customer-churn]
+3. Live Application - [https://customerchurnprediction-2k327gcbblu4dawrhawsit.streamlit.app/]
+4. Video Explanation - [https://drive.google.com/drive/u/1/folders/12rKe4vnmFKiYhrQIUKWCfCnlRTNMNwLt]
 
 Developed by Team RetainX AI
 
