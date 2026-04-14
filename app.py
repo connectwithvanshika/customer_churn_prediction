@@ -178,13 +178,17 @@ def risk_node(state: AgentState):
 
 
 def retrieval_node(state: AgentState):
+    
+    query = " ".join(state["reasons"])
+    
+    results = vectorstore.similarity_search(query, k=3)
+    
     strategies = []
     sources = []
 
-    for item in knowledge:
-        if item["condition"] in state["reasons"]:
-            strategies.append(item["strategy"])
-            sources.append(item["source"])
+    for doc in results:
+        strategies.append(doc.page_content)
+        sources.append(doc.metadata["source"])
 
     return {
         **state,
