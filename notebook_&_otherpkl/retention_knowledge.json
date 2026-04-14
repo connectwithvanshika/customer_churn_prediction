@@ -1,0 +1,27 @@
+[
+    {
+        "condition": "low_tenure",
+        "strategy": "Implement strong onboarding and early engagement programs",
+        "source": "Customer Onboarding Best Practices \u2013 HubSpot"
+    },
+    {
+        "condition": "low_tenure",
+        "strategy": "Deliver value early to prevent early churn",
+        "source": "The Value of Keeping the Right Customers \u2013 HBR"
+    },
+    {
+        "condition": "high_charges",
+        "strategy": "Offer flexible pricing or discounts",
+        "source": "Managing Churn to Maximize Profits \u2013 HBS"
+    },
+    {
+        "condition": "high_charges",
+        "strategy": "Optimize perceived value and pricing",
+        "source": "Breaking the Back of Customer Churn \u2013 Bain"
+    },
+    {
+        "condition": "general",
+        "strategy": "Use analytics-driven retention strategies",
+        "source": "Churn Prediction in Telecom \u2013 MDPI"
+    }
+]

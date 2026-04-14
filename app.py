@@ -103,6 +103,11 @@ encoders  = load_encoders()
 with open("retention_knowledge.json") as f:
     knowledge = json.load(f)
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
