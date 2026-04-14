@@ -629,7 +629,21 @@ if run:
     st.markdown('<div class="section-label">Prediction Result</div>', unsafe_allow_html=True)
     # (to show output)
     st.subheader("AI Retention Strategy")
-    st.write(result["final_output"])
+    output = result["final_output"]
+
+    st.subheader("Risk Summary")
+    st.write(output["risk_summary"])
+
+    st.subheader("Recommendations")
+    for rec in output["recommendations"]:
+        st.write("•", rec)
+
+    st.subheader("Sources")
+    for src in output["sources"]:
+        st.write("-", src)
+
+    st.subheader("Disclaimer")
+    st.info(output["disclaimer"])
 
 
     # Classification Output
