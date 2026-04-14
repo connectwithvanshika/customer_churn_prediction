@@ -582,6 +582,9 @@ if run:
 
     st.markdown('<div class="section-label">Prediction Result</div>', unsafe_allow_html=True)
 
+    st.subheader("AI Retention Strategy")
+    st.write(result["final_output"])
+
 
     # Classification Output
     if will_churn:
