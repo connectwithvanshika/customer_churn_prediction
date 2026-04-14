@@ -22,7 +22,7 @@ from typing import TypedDict, List
 from groq import Groq
 
 
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 
