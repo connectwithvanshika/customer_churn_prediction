@@ -105,6 +105,20 @@ with open("retention_knowledge.json") as f:
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+
+class AgentState(TypedDict):
+    churn_prob: float
+    tenure: int
+    monthly: float
+    
+    risk_level: str
+    reasons: List[str]
+    
+    strategies: List[str]
+    sources: List[str]
+    
+    final_output: str
+
 # ── CSS (UNCHANGED) ──────────────────────────────────────────────
 st.markdown("""
 <style>
