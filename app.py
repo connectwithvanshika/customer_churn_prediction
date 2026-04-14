@@ -199,6 +199,24 @@ def planning_node(state: AgentState):
 
     return {**state, "final_output": response.choices[0].message.content}
 
+# LANGGRAPH BUILD 
+
+builder = StateGraph(AgentState)
+
+builder.add_node("risk", risk_node)
+builder.add_node("retrieval", retrieval_node)
+builder.add_node("planning", planning_node)
+
+builder.set_entry_point("risk")
+
+builder.add_edge("risk", "retrieval")
+builder.add_edge("retrieval", "planning")
+
+graph = builder.compile()
+
+
+
+
 
 
 # ── CSS (UNCHANGED) ──────────────────────────────────────────────
