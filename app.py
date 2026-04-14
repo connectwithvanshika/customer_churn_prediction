@@ -504,6 +504,9 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 
 if run:
+
+
+    
     # Input validation to prevent invalid numeric values
     if monthly < 0 or total_c < 0:
         st.warning("Charges cannot be negative.")
@@ -512,6 +515,7 @@ if run:
     if tenure < 0:
         st.warning("Tenure cannot be negative.")
         st.stop()
+
 
     
     # Encode categorical variables using saved encoders
@@ -556,6 +560,15 @@ if run:
     # Predict churn probability
     with st.spinner("Running churn prediction..."):
       prob = float(model.predict_proba(input_df)[0][1])
+
+    state = {
+        "churn_prob": prob,
+        "tenure": tenure,
+        "monthly": monthly
+    }
+
+    result = graph.invoke(state)
+
 
     # Apply optimized threshold (0.4) instead of default 0.5
     will_churn = prob >= threshold
