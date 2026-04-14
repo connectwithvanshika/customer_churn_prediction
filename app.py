@@ -210,7 +210,7 @@ Sources: {state['sources']}
 IMPORTANT RULES:
 - Use ONLY the provided strategies and sources
 - Do NOT generate new strategies
-- If no strategy is relevant, return empty list
+- If no relevant strategy, say "No recommendation found"
 
 STRICT OUTPUT FORMAT (JSON ONLY):
 
@@ -482,6 +482,7 @@ html, body, [data-testid="stAppViewContainer"], section.main {
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # HERO
