@@ -22,6 +22,10 @@ from typing import TypedDict, List
 from groq import Groq
 
 
+from langchain.vectorstores import FAISS
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.docstore.document import Document
+
 # ── Page Configuration ─────────────────────────────────────────────
 # Sets metadata and layout for the Streamlit application
 st.set_page_config(
