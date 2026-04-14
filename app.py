@@ -229,7 +229,21 @@ ONLY return valid JSON. No extra text.
         messages=[{"role": "user", "content": prompt}]
     )
 
-    return {**state, "final_output": response.choices[0].message.content}
+    import json
+
+raw_output = response.choices[0].message.content
+
+try:
+    parsed_output = json.loads(raw_output)
+except:
+    parsed_output = {
+        "risk_summary": "Parsing error",
+        "recommendations": [],
+        "sources": [],
+        "disclaimer": "Model output could not be parsed"
+    }
+
+return {**state, "final_output": parsed_output}
 
 # LANGGRAPH BUILD 
 
