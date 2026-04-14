@@ -143,6 +143,22 @@ def risk_node(state: AgentState):
 
     return {**state, "risk_level": risk, "reasons": reasons}
 
+
+def retrieval_node(state: AgentState):
+    strategies = []
+    sources = []
+
+    for item in knowledge:
+        if item["condition"] in state["reasons"]:
+            strategies.append(item["strategy"])
+            sources.append(item["source"])
+
+    return {
+        **state,
+        "strategies": list(set(strategies)),
+        "sources": list(set(sources))
+    }
+
 # ── CSS (UNCHANGED) ──────────────────────────────────────────────
 st.markdown("""
 <style>
