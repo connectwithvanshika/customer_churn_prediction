@@ -1,0 +1,47 @@
+[
+  {
+    "condition": "low_tenure",
+    "strategy": "Implement strong onboarding and early engagement programs to help customers realize value quickly",
+    "source": "Customer Onboarding Best Practices – HubSpot (Link 11)"
+  },
+  {
+    "condition": "low_tenure",
+    "strategy": "Deliver value early in the customer lifecycle to prevent early-stage churn",
+    "source": "The Value of Keeping the Right Customers – Harvard Business Review (Link 1)"
+  },
+  {
+    "condition": "high_charges",
+    "strategy": "Offer flexible pricing plans or targeted discounts to reduce cost burden",
+    "source": "Managing Churn to Maximize Profits – HBS Working Knowledge (Link 2)"
+  },
+  {
+    "condition": "high_charges",
+    "strategy": "Optimize pricing perception by aligning cost with delivered value",
+    "source": "Breaking the Back of Customer Churn – Bain & Company (Link 8)"
+  },
+  {
+    "condition": "low_engagement",
+    "strategy": "Use personalized communication and lifecycle marketing to improve engagement",
+    "source": "How to Reduce Customer Churn – HubSpot (Link 12)"
+  },
+  {
+    "condition": "low_engagement",
+    "strategy": "Implement proactive customer success and support strategies",
+    "source": "AI-Based Proactive Care Reduces Churn – McKinsey (Link 6)"
+  },
+  {
+    "condition": "no_support",
+    "strategy": "Provide proactive support and dedicated customer success teams",
+    "source": "Customer Success in SaaS – HubSpot (Link 13)"
+  },
+  {
+    "condition": "general",
+    "strategy": "Use data-driven churn prediction models and retention analytics",
+    "source": "Churn Prediction in Telecom Using ML – MDPI (Link 16)"
+  },
+  {
+    "condition": "general",
+    "strategy": "Adopt experience-led growth strategies to enhance customer satisfaction",
+    "source": "Experience-Led Growth – McKinsey (Link 5)"
+  }
+]
