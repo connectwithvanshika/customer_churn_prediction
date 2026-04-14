@@ -1,15 +1,29 @@
 """
-Customer Churn Intelligence System
------------------------------------
-This Streamlit application loads a trained XGBoost churn prediction model
-and provides real-time churn probability predictions based on user inputs.
+Customer Churn Intelligence System (Agentic AI Version)
 
-The pipeline ensures:
-- Consistent feature encoding
-- Correct feature ordering
-- Proper numerical scaling
-- Threshold-based classification
+This Streamlit application predicts customer churn using a trained ML model
+and enhances it with an agentic AI system for retention strategy generation.
+
+Key Features:
+- ML-based churn prediction (XGBoost)
+- RAG (Retrieval-Augmented Generation) for retention strategies
+- LangGraph-based agent workflow (risk → retrieval → planning)
+- Structured AI output (risk summary, recommendations, sources)
+
+Goal:
+Move from prediction → actionable business decisions
 """
+
+
+# -------------------------------
+# Required Libraries
+# -------------------------------
+# streamlit → UI
+# pandas/numpy → data handling
+# joblib → loading saved ML models
+# langgraph → agent workflow
+# groq → LLM API
+# langchain → RAG pipeline
 
 import streamlit as st
 import pandas as pd
@@ -31,6 +45,14 @@ st.set_page_config(
     page_icon="✦",
     layout="wide",
 )
+
+
+
+# -------------------------------
+# Model & Preprocessing Loaders
+# -------------------------------
+# Ensures same preprocessing as training
+# (avoids mismatch errors during prediction)
 @st.cache_resource
 def load_model():
     """
@@ -101,13 +123,20 @@ threshold = load_threshold()
 encoders  = load_encoders()
 
 
-# Load RAG knowledge base
+# -------------------------------
+# RAG: Retention Knowledge Base
+# -------------------------------
+# Loads retention strategies from JSON
+# Converts them into documents for vector search
 with open("retention_knowledge.json") as f:
     knowledge = json.load(f)
 
 # Convert JSON to documents
 docs = []
 
+
+# Convert each knowledge entry into Document format
+# so it can be indexed in FAISS vector database
 for item in knowledge:
     content = f"Condition: {item['condition']}\nStrategy: {item['strategy']}"
     
@@ -123,7 +152,8 @@ for item in knowledge:
 
 
 
-# Create embeddings and FAISS DB
+# Create embeddings + vector store (FAISS)
+# Enables similarity search for RAG
 embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vectorstore = FAISS.from_documents(docs, embedding_model)
 
@@ -131,12 +161,21 @@ vectorstore = FAISS.from_documents(docs, embedding_model)
 
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
 
+# -------------------------------
+# LLM Setup (Groq API)
+# -------------------------------
+# Used to generate structured retention strategies
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
+
+# -------------------------------
+# Agent State Definition
+# -------------------------------
+# Stores data across agent steps:
+# prediction → risk → retrieval → final output
 class AgentState(TypedDict):
     churn_prob: float
     tenure: int
@@ -150,7 +189,11 @@ class AgentState(TypedDict):
     
     final_output: str
 
-# risk node 
+# -------------------------------
+# Node 1: Risk Analysis
+# -------------------------------
+# Converts churn probability into risk level
+# and identifies key reasons
 def risk_node(state: AgentState):
     prob = state["churn_prob"]
 
@@ -175,6 +218,11 @@ def risk_node(state: AgentState):
     return {**state, "risk_level": risk, "reasons": reasons}
 
 
+
+# -------------------------------
+# Node 2: Strategy Retrieval (RAG)
+# -------------------------------
+# Fetches relevant strategies using similarity search
 def retrieval_node(state: AgentState):
     
     query = " ".join(state["reasons"])
@@ -194,7 +242,10 @@ def retrieval_node(state: AgentState):
         "sources": list(set(sources))
     }
 
-# PLANNING NODE
+# -------------------------------
+# Node 3: Planning & Recommendation
+# -------------------------------
+# Uses LLM to generate structured retention plan (JSON)
 def planning_node(state: AgentState):
 
     prompt = f"""
@@ -245,7 +296,11 @@ ONLY return valid JSON. No extra text.
 
     return {**state, "final_output": parsed_output}
 
-# LANGGRAPH BUILD 
+# -------------------------------
+# LangGraph Workflow
+# -------------------------------
+# Defines pipeline:
+# Risk → Retrieval → Planning
 
 builder = StateGraph(AgentState)
 
@@ -502,8 +557,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ── User Input Section ─────────────────────────────────────────────
-# Collects structured customer profile information
+# -------------------------------
+# User Input Section
+# -------------------------------
+# Collects customer profile data for prediction
 st.markdown('<div class="section-label">Customer Profile Input</div>', unsafe_allow_html=True)
 
 c1, c2, c3 = st.columns(3)
@@ -552,6 +609,11 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 if run:
 
+    # -------------------------------
+    # Prediction + Agent Execution
+    # -------------------------------
+    # Runs ML model + agent when button is clicked
+
 
     
     # Input validation to prevent invalid numeric values
@@ -565,8 +627,8 @@ if run:
 
 
     
-    # Encode categorical variables using saved encoders
-    # Ensures deployment uses same encoding scheme as training
+   # Encode categorical inputs using saved encoders
+# to match training pipeline
 
     enc = {
         "gender": encoders["gender"].transform([gender])[0],
@@ -594,7 +656,7 @@ if run:
     # Convert input dictionary into DataFrame
     input_df = pd.DataFrame([enc])
 
-    # Ensure feature ordering matches training pipeline
+    # Ensure feature order matches training data
     feature_order = load_feature_order()
     input_df = input_df[feature_order]
 
@@ -614,6 +676,7 @@ if run:
         "monthly": monthly
     }
 
+    # Run agent pipeline to generate retention strategy
     result = graph.invoke(state)
 
 
@@ -630,6 +693,11 @@ if run:
     st.markdown('<div class="section-label">Prediction Result</div>', unsafe_allow_html=True)
     # (to show output)
     st.subheader("AI Retention Strategy")
+
+
+
+    # Display structured output from agent
+    # (risk summary, recommendations, sources, disclaimer)
     output = result["final_output"]
 
     st.subheader("Risk Summary")
