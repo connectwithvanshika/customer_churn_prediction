@@ -21,11 +21,9 @@ from langgraph.graph import StateGraph
 from typing import TypedDict, List
 from groq import Groq
 
-
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.docstore.document import Document
-
+from langchain_core.documents import Document
 # ── Page Configuration ─────────────────────────────────────────────
 # Sets metadata and layout for the Streamlit application
 st.set_page_config(
