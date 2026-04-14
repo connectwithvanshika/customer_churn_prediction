@@ -99,6 +99,11 @@ threshold = load_threshold()
 encoders  = load_encoders()
 
 
+# Load RAG knowledge base
+with open("retention_knowledge.json") as f:
+    knowledge = json.load(f)
+
+
 # ── CSS (UNCHANGED) ──────────────────────────────────────────────
 st.markdown("""
 <style>
