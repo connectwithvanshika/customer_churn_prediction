@@ -123,6 +123,14 @@ for item in knowledge:
         )
     )
 
+
+
+# Create embeddings and FAISS DB
+embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vectorstore = FAISS.from_documents(docs, embedding_model)
+
+
+
 import os
 from dotenv import load_dotenv
 
