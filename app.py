@@ -103,6 +103,7 @@ encoders  = load_encoders()
 with open("retention_knowledge.json") as f:
     knowledge = json.load(f)
 
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # ── CSS (UNCHANGED) ──────────────────────────────────────────────
 st.markdown("""
