@@ -23,7 +23,7 @@ from groq import Groq
 
 
 from langchain_community.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 
 # ── Page Configuration ─────────────────────────────────────────────
