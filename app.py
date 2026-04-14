@@ -231,19 +231,19 @@ ONLY return valid JSON. No extra text.
 
     import json
 
-raw_output = response.choices[0].message.content
+    raw_output = response.choices[0].message.content
 
-try:
-    parsed_output = json.loads(raw_output)
-except:
-    parsed_output = {
-        "risk_summary": "Parsing error",
-        "recommendations": [],
-        "sources": [],
-        "disclaimer": "Model output could not be parsed"
-    }
+    try:
+        parsed_output = json.loads(raw_output)
+    except:
+        parsed_output = {
+            "risk_summary": "Parsing error",
+            "recommendations": [],
+            "sources": [],
+            "disclaimer": "Model output could not be parsed"
+        }
 
-return {**state, "final_output": parsed_output}
+    return {**state, "final_output": parsed_output}
 
 # LANGGRAPH BUILD 
 
