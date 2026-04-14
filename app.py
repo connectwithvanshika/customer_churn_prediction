@@ -107,6 +107,22 @@ encoders  = load_encoders()
 with open("retention_knowledge.json") as f:
     knowledge = json.load(f)
 
+# Convert JSON to documents
+docs = []
+
+for item in knowledge:
+    content = f"Condition: {item['condition']}\nStrategy: {item['strategy']}"
+    
+    docs.append(
+        Document(
+            page_content=content,
+            metadata={
+                "source": item["source"],
+                "condition": item["condition"]
+            }
+        )
+    )
+
 import os
 from dotenv import load_dotenv
 
