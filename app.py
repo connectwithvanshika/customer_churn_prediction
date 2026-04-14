@@ -119,7 +119,7 @@ class AgentState(TypedDict):
     
     final_output: str
 
-
+# risk node 
 def risk_node(state: AgentState):
     prob = state["churn_prob"]
 
