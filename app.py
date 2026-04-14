@@ -198,34 +198,31 @@ def retrieval_node(state: AgentState):
 def planning_node(state: AgentState):
 
     prompt = f"""
-    You are an AI Customer Retention Strategist.
+You are an AI Customer Retention Strategist.
 
-    Customer churn probability: {state['churn_prob']}
-    Risk level: {state['risk_level']}
-    Reasons: {state['reasons']}
+Customer churn probability: {state['churn_prob']}
+Risk level: {state['risk_level']}
+Reasons: {state['reasons']}
 
-    Retrieved Strategies: {state['strategies']}
-    Sources: {state['sources']}
+Retrieved Strategies: {state['strategies']}
+Sources: {state['sources']}
 
-    IMPORTANT:
-    Use ONLY provided strategies and sources.
+IMPORTANT RULES:
+- Use ONLY the provided strategies and sources
+- Do NOT generate new strategies
+- If no strategy is relevant, return empty list
 
-    OUTPUT FORMAT:
+STRICT OUTPUT FORMAT (JSON ONLY):
 
-    Risk Summary:
-    ...
+{{
+  "risk_summary": "short explanation of churn risk",
+  "recommendations": ["action 1", "action 2", "action 3"],
+  "sources": ["source1", "source2"],
+  "disclaimer": "This prediction is probabilistic and may not guarantee actual churn."
+}}
 
-    Recommendations:
-    1.
-    2.
-    3.
-
-    Sources:
-    ...
-
-    Disclaimer:
-    This prediction is probabilistic and may not guarantee actual churn.
-    """
+ONLY return valid JSON. No extra text.
+"""
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
