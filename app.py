@@ -119,6 +119,30 @@ class AgentState(TypedDict):
     
     final_output: str
 
+
+def risk_node(state: AgentState):
+    prob = state["churn_prob"]
+
+    if prob > 0.7:
+        risk = "High"
+    elif prob > 0.4:
+        risk = "Medium"
+    else:
+        risk = "Low"
+
+    reasons = []
+
+    if state["tenure"] < 6:
+        reasons.append("low_tenure")
+
+    if state["monthly"] > 80:
+        reasons.append("high_charges")
+
+    if not reasons:
+        reasons.append("general")
+
+    return {**state, "risk_level": risk, "reasons": reasons}
+
 # ── CSS (UNCHANGED) ──────────────────────────────────────────────
 st.markdown("""
 <style>
