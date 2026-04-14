@@ -581,7 +581,7 @@ if run:
     st.caption(f"Model Confidence Score: {confidence:.2f}")
 
     st.markdown('<div class="section-label">Prediction Result</div>', unsafe_allow_html=True)
-
+    # (to show output)
     st.subheader("AI Retention Strategy")
     st.write(result["final_output"])
 
