@@ -270,10 +270,12 @@ Reasons: {state['reasons']}
 Retrieved Strategies: {state['strategies']}
 Sources: {state['sources']}
 
-IMPORTANT RULES:
-- Use ONLY the provided strategies and sources
-- Do NOT generate new strategies
-- If no relevant strategy, say "No recommendation found"
+STRICT RULES:
+- Use ONLY the provided strategies
+- DO NOT create new strategies
+- If no relevant strategies exist, return empty recommendations
+- You MUST include sources exactly as provided
+- Do NOT assume missing data
 
 STRICT OUTPUT FORMAT (JSON ONLY):
 
