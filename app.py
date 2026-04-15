@@ -214,6 +214,18 @@ def risk_node(state: AgentState):
 
     if not reasons:
         reasons.append("general")
+    if risk == "Low":
+        return {
+            **state,
+            "risk_level": risk,
+            "reasons": reasons,
+            "final_output": {
+                "risk_summary": "Customer has low churn risk. No immediate action required.",
+                "recommendations": ["Maintain current service quality"],
+                "sources": [],
+                "disclaimer": "Low-risk customer"
+            }
+        }
 
     return {**state, "risk_level": risk, "reasons": reasons}
 
@@ -310,8 +322,14 @@ builder.add_node("planning", planning_node)
 
 builder.set_entry_point("risk")
 
-builder.add_edge("risk", "retrieval")
+def route_after_risk(state: AgentState):
+    if state["risk_level"] == "Low":
+        return "end"
+    return "retrieval"
+
+builder.add_conditional_edges("risk", route_after_risk)
 builder.add_edge("retrieval", "planning")
+builder.set_finish_point("planning")
 
 graph = builder.compile()
 
