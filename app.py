@@ -214,18 +214,6 @@ def risk_node(state: AgentState):
 
     if not reasons:
         reasons.append("general")
-    if risk == "Low":
-        return {
-            **state,
-            "risk_level": risk,
-            "reasons": reasons,
-            "final_output": {
-                "risk_summary": "Customer has low churn risk. No immediate action required.",
-                "recommendations": ["Maintain current service quality"],
-                "sources": [],
-                "disclaimer": "Low-risk customer"
-            }
-        }
 
     return {**state, "risk_level": risk, "reasons": reasons}
 
@@ -270,23 +258,24 @@ Reasons: {state['reasons']}
 Retrieved Strategies: {state['strategies']}
 Sources: {state['sources']}
 
-STRICT RULES:
-- Use ONLY the provided strategies
-- DO NOT create new strategies
-- If no relevant strategies exist, return empty recommendations
-- You MUST include sources exactly as provided
-- Do NOT assume missing data
+IMPORTANT RULES:
+- Use ONLY the provided strategies and sources
+- Do NOT generate new strategies
+- If no relevant strategy, say "No recommendation found"
 
-STRICT OUTPUT FORMAT (JSON ONLY):
+RETURN STRICT JSON:
 
 {{
-  "risk_summary": "short explanation of churn risk",
-  "recommendations": ["action 1", "action 2", "action 3"],
+  "risk_summary": "Explain churn risk in detail (2-3 lines with reasoning)",
+  "recommendations": [
+    "Detailed action 1 with explanation",
+    "Detailed action 2 with explanation"
+  ],
   "sources": ["source1", "source2"],
   "disclaimer": "This prediction is probabilistic and may not guarantee actual churn."
 }}
 
-ONLY return valid JSON. No extra text.
+ONLY return JSON. No extra text.
 """
 
     response = client.chat.completions.create(
@@ -324,14 +313,8 @@ builder.add_node("planning", planning_node)
 
 builder.set_entry_point("risk")
 
-def route_after_risk(state: AgentState):
-    if state["risk_level"] == "Low":
-        return "end"
-    return "retrieval"
-
-builder.add_conditional_edges("risk", route_after_risk)
+builder.add_edge("risk", "retrieval")
 builder.add_edge("retrieval", "planning")
-builder.set_finish_point("planning")
 
 graph = builder.compile()
 
@@ -716,8 +699,7 @@ if run:
 
 
 
-    # Display structured output from agent
-    # (risk summary, recommendations, sources, disclaimer)
+    
     output = result["final_output"]
 
     st.subheader("Risk Summary")
