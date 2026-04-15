@@ -272,6 +272,7 @@ RETURN STRICT JSON:
     "Detailed action 2 with explanation"
   ],
   "sources": ["source1", "source2"],
+  "business_impact": "Explain what happens if no action is taken (2 lines)",
   "disclaimer": "This prediction is probabilistic and may not guarantee actual churn."
 }}
 
