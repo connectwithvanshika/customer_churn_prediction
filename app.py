@@ -699,7 +699,10 @@ if run:
     st.subheader("AI Retention Strategy")
 
 
+
+    
     output = result["final_output"]
+
 
     st.subheader("Risk Summary")
     st.write(output["risk_summary"])
@@ -707,10 +710,6 @@ if run:
     st.subheader("Recommendations")
     for rec in output["recommendations"]:
         st.write("•", rec)
-        
-    if "business_impact" in output:
-        st.subheader("Business Impact")
-        st.write(output["business_impact"])
 
     st.subheader("Sources")
     for src in output["sources"]:
@@ -718,6 +717,7 @@ if run:
 
     st.subheader("Disclaimer")
     st.info(output["disclaimer"])
+
     
 
 
