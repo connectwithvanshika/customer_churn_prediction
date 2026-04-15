@@ -21,18 +21,19 @@ A classical machine learning pipeline was developed to predict whether a telecom
 
 The goal is to identify high-risk customers early so that proactive retention strategies can be applied.
 
-### Milestone 2: Agentic Retention Strategist (Extension)
+### Milestone 2: Agentic Retention Intelligence System (Implemented)
 
-The system will be extended into an intelligent agent that:
+The system has been extended into a fully functional Agentic AI pipeline that:
 
-- Reasons about churn probability
-- Retrieves retention best practices using RAG (Retrieval Augmented Generation)
-- Generates structured intervention strategies
-- Plans retention workflows autonomously
+- Performs churn risk reasoning using model outputs
+- Uses RAG (FAISS + embeddings) to retrieve relevant retention strategies
+- Implements a multi-step agent workflow using LangGraph
+- Generates structured, explainable retention reports using an LLM
+- Ensures grounded outputs using anti-hallucination prompting
 
----
+This transforms the system from prediction → reasoning → action.
 
-## 2.Problem Statement
+## 2. Problem Statement
 
 Customer churn is a critical issue for subscription-based businesses because losing existing customers directly impacts revenue and long-term growth. Acquiring new customers is significantly more expensive than retaining current ones.
 
@@ -44,6 +45,15 @@ The objective of this project is to:
 - Transition from predictive analytics to intelligent AI-assisted intervention
 
 ---
+## Business Impact
+
+Customer churn directly affects revenue, customer lifetime value, and growth.
+
+- Reducing churn by even 5% can significantly increase profits  
+- Early detection allows proactive intervention  
+- AI-driven retention strategies improve decision-making  
+
+This system helps businesses move from reactive to proactive retention.
 
 ## 3. Dataset Information
 
@@ -97,19 +107,14 @@ The following preprocessing steps were performed:
 Categorical features were label encoded using `LabelEncoder` and the encoders were saved using joblib for deployment consistency.
 
 Numerical features (`tenure`, `MonthlyCharges`, `TotalCharges`) were standardized using `StandardScaler`.
-
 Class imbalance was handled in the XGBoost model using the `scale_pos_weight` parameter to improve recall for churn customers.
 
-Preprocessing artifacts saved:
+A stratified train-test split was used to maintain class distribution.
+
+Preprocessing artifacts saved for deployment consistency:
 - encoders.pkl
 - scaler.pkl
 - feature_order.pkl
-
-- Stratified train-test split to handle class imbalance
-- Saved preprocessing artifacts:
-  - encoders.pkl
-  - scaler.pkl
-  - feature_order.pkl
 
 ---
 
@@ -411,12 +416,66 @@ These guarantee that the deployed application produces predictions identical to 
 
 User Input → Encoding → Feature Ordering → Scaling → XGBoost Model → Probability → Threshold Logic → UI Output
 
-### Milestone 2 (Planned Agent Architecture)
+### Milestone 2 Architecture (Implemented)
 
-User Query → Risk Assessment → RAG Retrieval → Strategy Planning → Structured Retention Report
+User Input → Preprocessing → ML Model → Risk Node → RAG (FAISS) → LLM (Groq) → Structured Output
 
 ---
----
+
+## Architecture Diagram
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/0b241f50-9dac-434b-b97b-793e25cc6a54" />
+
+
+## 11.1 Agentic AI System Architecture (Milestone 2)
+
+The system integrates machine learning, retrieval systems, and LLM-based reasoning.
+
+### Pipeline Flow:
+
+User Input → ML Model → Risk Analysis → Retrieval (RAG) → Planning (LLM) → Structured Output
+
+### Components:
+
+1. ML Layer (XGBoost)
+   - Predicts churn probability
+
+2. Risk Analysis Node
+   - Converts probability into risk levels
+   - Identifies churn drivers (low tenure, high charges)
+
+3. Retrieval Layer (RAG)
+   - FAISS vector database
+   - Embeddings: all-MiniLM-L6-v2
+   - Retrieves relevant strategies
+
+4. Planning Node (LLM - Groq)
+   - Generates structured JSON output
+   - Uses strict prompt rules
+
+5. Output Layer
+   - Risk summary
+   - Recommendations
+   - Sources
+   - Disclaimer
+
+## 11.2 Agent Workflow (LangGraph)
+
+The system uses LangGraph to orchestrate a multi-step AI workflow.
+
+### Workflow:
+
+risk_node → retrieval_node → planning_node
+
+### Agent State (AgentState):
+
+- churn_prob → model output
+- risk_level → Low / Medium / High
+- reasons → churn drivers
+- strategies → retrieved knowledge
+- sources → references
+- final_output → structured JSON response
+
+This ensures modular, explainable, and scalable AI behavior.
 
 ## 12. Project Structure
 
@@ -425,42 +484,54 @@ The repository is organized to ensure clarity, reproducibility, and deployment r
 ```
 customer_churn_prediction/
 │
-├── app.py                               # Streamlit deployment application
-├── model_test.py                        # Local validation & model testing script
+├── app.py                               # Streamlit application (ML + Agentic AI pipeline)
+├── model_test.py                        # Local model validation script
 ├── requirements.txt                     # Project dependencies
 ├── README.md                            # Project documentation
+├── retention_knowledge.json             # Knowledge base for RAG
+├── .env                                 # Environment variables (API keys)
 ├── .gitignore                           # Version control exclusions
 │
-├── .streamlit/                          # Streamlit configuration settings
+├── .streamlit/                          # Streamlit configuration
 │   └── config.toml
 │
-├── Raw_Dataset/                         # Original dataset used for training
+├── Raw_Dataset/                         # Original dataset
 │   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
 │
-├── notebook_&_otherpkl/                 # Development notebook & saved model artifacts
+├── notebook_&_otherpkl/                 # Notebook + trained artifacts
 │   ├── CUSTOMER_CHURN_PREDICTION_Gen_AI_Project.ipynb
 │   ├── final_churn_model.pkl
 │   ├── scaler.pkl
 │   ├── encoders.pkl
 │   ├── threshold.pkl
-│   └── feature_order.pkl
+│   ├── feature_order.pkl
+│   ├── retention_knowledge.json         # RAG dataset (used for vector DB)
+│   └── milestone2_ra...                 # Additional milestone 2 artifacts
 │
-├── EDA Insights/                        # Saved EDA visualizations & analysis outputs
+├── EDA Insights/                        # EDA visualizations
+│   ├── EDA 1.png
+│   ├── EDA 2.png
+│   └── EDA 3.png
 │
-├── images/                              # UI screenshots & dashboard visuals
-│   ├── UI_1.png
-│   └── UI_2.png
+├── Milestone 1 and 2 UI/                # UI screenshots for submission
+│   ├── Ui_1.png
+│   └── Ui_2.png
 │
-└── Report/                              # Final structured project report
+├── Report/                              # Final report
+│   └── Telecom_Churn_...pdf
 ```
+
 
 ### Structure Overview
 
-- **Application Layer** → `app.py`
+- **Application Layer** → `app.py` (ML + RAG + LangGraph + LLM pipeline)
 - **Model Artifacts** → `.pkl` files for deployment consistency
 - **Validation Layer** → `model_test.py`
-- **Configuration** → `.streamlit/config.toml`
+- **Knowledge Base (RAG)** → `retention_knowledge.json`
+- **Agent Workflow** → LangGraph nodes (risk → retrieval → planning)
+- **Configuration** → `.streamlit/config.toml` + `.env`
 - **Dataset & Notebook** → Raw data and full ML workflow
+- **EDA & UI Assets** → Visual insights and application screenshots
 - **Documentation** → README and report files
 
 This structure ensures that the training pipeline, deployment pipeline, and evaluation pipeline remain fully reproducible.
@@ -468,6 +539,62 @@ This structure ensures that the training pipeline, deployment pipeline, and eval
 ---
 
 ---
+
+## System Input & Output
+
+### Input:
+- Customer profile (tenure, services, billing details)
+
+### Output:
+- Churn probability score  
+- Risk level (Low / Medium / High)  
+- AI-generated retention strategies  
+- Source-backed recommendations
+
+### Future Agent Enhancement
+
+The workflow can be extended with conditional logic, where:
+- Low-risk users skip retrieval step  
+- High-risk users trigger full RAG + planning pipeline  
+
+This improves efficiency and makes the system truly agentic.
+
+## System Robustness
+
+- Handles missing or invalid inputs  
+- Includes fallback for LLM JSON parsing  
+- Prevents hallucination using strict prompts  
+- Ensures consistent output structure
+
+
+## 12.1 Retrieval-Augmented Generation (RAG)
+
+The system uses RAG to ensure grounded and context-aware recommendations.
+
+### Process:
+
+- Knowledge is stored in `retention_knowledge.json`
+- Converted into documents
+- Embedded using MiniLM model
+- Stored in FAISS vector database
+- Retrieved using similarity search
+
+### Benefits:
+
+- Reduces hallucination
+- Improves accuracy
+- Provides source-based recommendations
+
+## 12.2 Prompt Engineering & Safety
+
+The LLM is controlled using strict instructions:
+
+- Use only retrieved strategies
+- Do not generate new information
+- Return JSON output
+- Handle missing recommendations safely
+
+This ensures reliable and explainable outputs.
 
 ## 13. Technology Stack
 
@@ -479,12 +606,10 @@ This structure ensures that the training pipeline, deployment pipeline, and eval
 | Preprocessing | StandardScaler, LabelEncoder |
 | Deployment | Streamlit |
 | Model Storage | Joblib |
-
-Planned for Milestone 2:
-- LangGraph
-- Chroma or FAISS
-- Open-source LLM (Free tier)
-- Hosted deployment (Hugging Face / Streamlit Cloud / Render)
+| Agent Framework | LangGraph |
+| Vector Database | FAISS |
+| Embeddings | HuggingFace MiniLM |
+| LLM | Groq (LLaMA 3.3) |
 
 ---
 
@@ -500,44 +625,63 @@ Planned for Milestone 2:
 - Model artifacts saved
 - Performance evaluation report
 
-### Milestone 2 (Planned)
+### Milestone 2 (Completed)
 
-- Agentic retention strategist
-- RAG-based best practice retrieval
-- Structured retention reports
-- Public deployment link
-- Agent workflow documentation
-- GitHub repository
-- Demo video
+- Agentic AI workflow using LangGraph
+- RAG-based retrieval using FAISS
+- Structured JSON output generation
+- Prompt engineering for hallucination control
+- Explainable recommendations with sources
+- Integrated ML + AI pipeline
 
 ---
 
 ## 15. Future Improvements
 
-- Feature importance visualization in UI
-- SHAP explanations for transparency
-- Dynamic threshold tuning
-- Customer segmentation module
-- Agentic reasoning layer using LangGraph
-- Automated retention playbook generation
+- Add conditional agent flow (skip steps for low-risk users)  
+- Integrate SHAP for explainable AI insights  
+- Enable real-time data integration via APIs  
+- Generate personalized retention strategies  
+- Implement feedback loop for continuous learning  
+- Expand RAG knowledge base for better recommendations  
+- Deploy using Docker & cloud platforms (AWS/GCP)  
+- Add monitoring for model performance & drift  
+- Improve UI with dashboards & visual insights  
+- Secure configuration using environment variables  
+- Implement multi-agent architecture for advanced reasoning  
+- Perform A/B testing for retention strategies  
 
 ---
 
 ## 16. Conclusion
 
-This project successfully implements a complete churn prediction pipeline from raw dataset to deployed interactive application.
+This project successfully implements an end-to-end customer churn intelligence system, starting from raw data processing to a fully deployed interactive application.
 
-It transitions from classical machine learning to the foundation of an agent-based intelligent retention strategist.
+It goes beyond traditional machine learning by integrating an agentic AI layer, transforming the system from a predictive model into an intelligent decision-support system. By combining ML, RAG, and LLM-based reasoning, the project demonstrates how modern AI systems can move from prediction to actionable business insights.
 
 The system:
 
-- Identifies high-risk customers
-- Provides probability-based insights
-- Enables proactive intervention
-- Is deployment-ready
-- Is extensible toward autonomous AI decision systems
+- Accurately identifies high-risk customers using a recall-optimized ML model  
+- Provides probability-driven insights for better decision-making  
+- Incorporates risk analysis to interpret model outputs  
+- Uses RAG to retrieve domain-specific retention strategies  
+- Generates structured, explainable recommendations using LLMs  
+- Ensures transparency through source-backed outputs  
+- Is deployed as an interactive and user-friendly application  
+- Is designed to be scalable and extensible for real-world business use  
 
-This demonstrates practical application of machine learning in business analytics and lays the foundation for intelligent AI-driven customer retention systems.
+This project highlights the practical application of machine learning and generative AI in solving real-world business problems. It lays a strong foundation for building intelligent, autonomous systems capable of assisting organizations in customer retention and strategic decision-making.
+
+## Deployment
+
+The application is deployed using Streamlit and can be accessed via a public link.
+
+The system integrates:
+- ML model inference
+- RAG retrieval system
+- LLM-based reasoning
+
+All components run in a unified pipeline.
 
 ## Dataset Source
 IBM Sample Data Sets. Telco Customer Churn Dataset. Kaggle. Available at:
@@ -550,6 +694,16 @@ https://www.kaggle.com/datasets/blastchar/telco-customer-churn
 • Hunter, J. D. (2007). Matplotlib: A 2D Graphics Environment. Computing in Science & Engineering, 9(3).
 • Plotly Technologies Inc. Plotly Python Graphing Library. https://plotly.com/python/
 • Streamlit Inc. Streamlit: The fastest way to build data apps. https://streamlit.io
+
+• LangChain. Framework for developing applications powered by LLMs. https://www.langchain.com/  
+• LangGraph. Framework for building stateful, multi-step AI agents.  
+• Johnson, J., Douze, M., & Jégou, H. (2017). FAISS: Efficient Similarity Search. Facebook AI Research.  
+• HuggingFace. Sentence Transformers & Embeddings Models. https://huggingface.co/  
+• Groq Inc. LLM Inference Engine (LLaMA Models). https://groq.com/  
+
+• Python Software Foundation. Python Language Reference. https://www.python.org/  
+• Joblib Library. Efficient serialization for ML models.  
+• dotenv. Environment variable management for secure configuration.  
 
 ## Live Resources
 1. Live Colab Notebook - [https://colab.research.google.com/drive/1qUUYKSU4QDwKlGH_H9j1Cr2NyEKXcqIA?usp=sharing]
