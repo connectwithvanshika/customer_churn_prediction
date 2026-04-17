@@ -246,6 +246,7 @@ if "customer_data" not in st.session_state:
 def load_data():
     paths = [
         "WA_Fn-UseC_-Telco-Customer-Churn.csv",
+        "Raw_Dataset/WA_Fn-UseC_-Telco-Customer-Churn.csv",  
         "data/WA_Fn-UseC_-Telco-Customer-Churn.csv",
         "dataset/WA_Fn-UseC_-Telco-Customer-Churn.csv",
         "Telco-Customer-Churn.csv",
