@@ -1230,23 +1230,61 @@ IBM Sample Data Sets. Telco Customer Churn Dataset. Kaggle. Available at:
 https://www.kaggle.com/datasets/blastchar/telco-customer-churn
 
 ## Libraries & Tools
-• Pedregosa, F., et al. (2011). Scikit-learn: Machine Learning in Python. JMLR, 12, 2825–2830.
-• Chen, T., & Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System. ACM SIGKDD.
-• McKinney, W. (2010). Data Structures for Statistical Computing in Python. SciPy Conference.
-• Hunter, J. D. (2007). Matplotlib: A 2D Graphics Environment. Computing in Science & Engineering, 9(3).
-• Plotly Technologies Inc. Plotly Python Graphing Library. https://plotly.com/python/
-• Streamlit Inc. Streamlit: The fastest way to build data apps. https://streamlit.io
 
-• LangChain. Framework for developing applications powered by LLMs. https://www.langchain.com/  
-• LangGraph. Framework for building stateful, multi-step AI agents.  
-• Johnson, J., Douze, M., & Jégou, H. (2017). FAISS: Efficient Similarity Search. Facebook AI Research.  
-• HuggingFace. Sentence Transformers & Embeddings Models. https://huggingface.co/  
-• Groq Inc. LLM Inference Engine (LLaMA Models). https://groq.com/  
+### Machine Learning & Data Science
+- **Pedregosa, F., et al. (2011)**  
+  *Scikit-learn: Machine Learning in Python.* JMLR, 12, 2825–2830.
 
-• Python Software Foundation. Python Language Reference. https://www.python.org/  
-• Joblib Library. Efficient serialization for ML models.  
-• dotenv. Environment variable management for secure configuration.  
+- **Chen, T., & Guestrin, C. (2016)**  
+  *XGBoost: A Scalable Tree Boosting System.* ACM SIGKDD.
 
+- **McKinney, W. (2010)**  
+  *Data Structures for Statistical Computing in Python.* SciPy Conference.
+
+- **Hunter, J. D. (2007)**  
+  *Matplotlib: A 2D Graphics Environment.* Computing in Science & Engineering, 9(3).
+
+- **Plotly Technologies Inc.**  
+  *Plotly Python Graphing Library.*  
+  https://plotly.com/python/
+
+---
+
+### AI, LLMs & Retrieval Systems
+- **LangChain**  
+  Framework for developing applications powered by LLMs.  
+  https://www.langchain.com/
+
+- **LangGraph**  
+  Framework for building stateful, multi-step AI agents.
+
+- **Johnson, J., Douze, M., & Jégou, H. (2017)**  
+  *FAISS: Efficient Similarity Search.* Facebook AI Research.
+
+- **Hugging Face**  
+  Sentence Transformers & Embeddings Models.  
+  https://huggingface.co/
+
+- **Groq Inc.**  
+  LLM Inference Engine (LLaMA Models).  
+  https://groq.com/
+
+---
+
+### Core Technologies & Utilities
+- **Python Software Foundation**  
+  Python Language Reference.  
+  https://www.python.org/
+
+- **Joblib**  
+  Efficient serialization for ML models.
+
+- **dotenv**  
+  Environment variable management for secure configuration.
+
+- **Streamlit Inc.**  
+  *Streamlit: The fastest way to build data apps.*  
+  https://streamlit.io
 ## Live Resources
 1. Live Colab Notebook - [https://colab.research.google.com/drive/1qUUYKSU4QDwKlGH_H9j1Cr2NyEKXcqIA?usp=sharing]
 2. Dataset (Kaggle) - [https://www.kaggle.com/datasets/blastchar/telco-customer-churn]
