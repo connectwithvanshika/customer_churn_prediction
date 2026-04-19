@@ -1,0 +1,344 @@
+# System Architecture Diagram
+## Customer Churn Intelligence System
+
+---
+
+## 1. High-Level System Architecture
+
+```mermaid
+graph TB
+    subgraph USER_LAYER["🖥️ Presentation Layer"]
+        UI["Streamlit Web App<br/>(app.py)"]
+        CSS["Custom CSS Styling<br/>(Playfair Display + Inter)"]
+    end
+
+    subgraph INPUT_LAYER["📋 Input Processing Layer"]
+        FORM["Customer Profile Form<br/>(19 Features)"]
+        VALIDATE["Input Validation"]
+    end
+
+    subgraph ML_LAYER["🤖 ML Inference Layer"]
+        ENC["Label Encoders<br/>(encoders.pkl)"]
+        SCALE["Standard Scaler<br/>(scaler.pkl)"]
+        ORDER["Feature Ordering<br/>(feature_order.pkl)"]
+        MODEL["XGBoost Classifier<br/>(final_churn_model.pkl)"]
+        THRESH["Optimized Threshold<br/>(threshold.pkl, τ=0.4)"]
+    end
+
+    subgraph AGENT_LAYER["🧠 Agentic AI Layer (LangGraph)"]
+        RISK["Risk Assessment Node"]
+        RAG["RAG Retrieval Node"]
+        PLAN["Planning Node"]
+    end
+
+    subgraph RAG_LAYER["📚 RAG Knowledge Layer"]
+        KB["Retention Knowledge Base<br/>(retention_knowledge.json)"]
+        EMB["HuggingFace Embeddings<br/>(all-MiniLM-L6-v2)"]
+        FAISS["FAISS Vector Store"]
+    end
+
+    subgraph LLM_LAYER["💬 LLM Reasoning Layer"]
+        GROQ["Groq API Client"]
+        LLAMA["LLaMA 3.3 70B Versatile"]
+    end
+
+    subgraph OUTPUT_LAYER["📊 Output Layer"]
+        PRED["Churn Prediction Result"]
+        STRAT["AI Retention Strategy"]
+        CONF["Confidence Score"]
+    end
+
+    UI --> FORM
+    CSS -.-> UI
+    FORM --> VALIDATE
+    VALIDATE --> ENC
+    ENC --> ORDER
+    ORDER --> SCALE
+    SCALE --> MODEL
+    MODEL -->|"churn_prob"| THRESH
+    MODEL -->|"churn_prob"| RISK
+    RISK -->|"risk_level + reasons"| RAG
+    RAG -->|"strategies + sources"| PLAN
+    KB --> EMB
+    EMB --> FAISS
+    FAISS -.->|"similarity_search(k=3)"| RAG
+    PLAN -->|"prompt"| GROQ
+    GROQ --> LLAMA
+    LLAMA -->|"JSON response"| PLAN
+    THRESH --> PRED
+    PLAN --> STRAT
+    MODEL --> CONF
+    PRED --> UI
+    STRAT --> UI
+    CONF --> UI
+
+    style USER_LAYER fill:#ede9ff,stroke:#7c3aed,stroke-width:2px
+    style INPUT_LAYER fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
+    style ML_LAYER fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
+    style AGENT_LAYER fill:#dcfce7,stroke:#22c55e,stroke-width:2px
+    style RAG_LAYER fill:#fce7f3,stroke:#ec4899,stroke-width:2px
+    style LLM_LAYER fill:#fed7aa,stroke:#f97316,stroke-width:2px
+    style OUTPUT_LAYER fill:#e0e7ff,stroke:#6366f1,stroke-width:2px
+```
+
+---
+
+## 2. LangGraph Agent Pipeline (Detailed Flow)
+
+```mermaid
+graph LR
+    START(("▶ START")) --> RISK_NODE
+
+    subgraph RISK_NODE["🔴 Risk Assessment Node"]
+        R1["Evaluate churn_prob"]
+        R2{"prob > 0.7?"}
+        R3{"prob > 0.4?"}
+        R4["Risk = High"]
+        R5["Risk = Medium"]
+        R6["Risk = Low"]
+        R7["Check tenure < 6"]
+        R8["Check monthly > 80"]
+        R9["Append reasons[]"]
+
+        R1 --> R2
+        R2 -->|Yes| R4
+        R2 -->|No| R3
+        R3 -->|Yes| R5
+        R3 -->|No| R6
+        R4 --> R7
+        R5 --> R7
+        R6 --> R7
+        R7 --> R8
+        R8 --> R9
+    end
+
+    RISK_NODE --> RETRIEVAL_NODE
+
+    subgraph RETRIEVAL_NODE["🔍 RAG Retrieval Node"]
+        S1["Join reasons as query"]
+        S2["FAISS similarity_search<br/>(k=3)"]
+        S3["Extract strategies[]"]
+        S4["Extract sources[]"]
+
+        S1 --> S2
+        S2 --> S3
+        S3 --> S4
+    end
+
+    RETRIEVAL_NODE --> PLANNING_NODE
+
+    subgraph PLANNING_NODE["📝 Planning Node"]
+        P1["Build LLM prompt"]
+        P2["Call Groq API<br/>(LLaMA 3.3 70B)"]
+        P3["Parse JSON response"]
+        P4["Fallback on parse error"]
+
+        P1 --> P2
+        P2 --> P3
+        P3 --> P4
+    end
+
+    PLANNING_NODE --> END_NODE(("⏹ END"))
+
+    style RISK_NODE fill:#fee2e2,stroke:#ef4444,stroke-width:2px
+    style RETRIEVAL_NODE fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
+    style PLANNING_NODE fill:#dcfce7,stroke:#22c55e,stroke-width:2px
+```
+
+---
+
+## 3. RAG (Retrieval-Augmented Generation) Pipeline
+
+```mermaid
+graph TB
+    subgraph KNOWLEDGE["📖 Knowledge Base"]
+        JSON["retention_knowledge.json<br/>(9 strategy entries)"]
+    end
+
+    subgraph CONDITIONS["🏷️ Strategy Categories"]
+        C1["low_tenure<br/>(2 strategies)"]
+        C2["high_charges<br/>(2 strategies)"]
+        C3["low_engagement<br/>(2 strategies)"]
+        C4["no_support<br/>(1 strategy)"]
+        C5["general<br/>(2 strategies)"]
+    end
+
+    subgraph EMBEDDING["🔢 Embedding Pipeline"]
+        DOC["LangChain Documents<br/>(page_content + metadata)"]
+        HF["HuggingFace Embeddings<br/>(all-MiniLM-L6-v2)"]
+        VEC["384-dim Vectors"]
+    end
+
+    subgraph VECTOR_DB["🗄️ Vector Store"]
+        FAISS_DB["FAISS Index<br/>(In-Memory)"]
+    end
+
+    subgraph QUERY["🔎 Query Pipeline"]
+        REASONS["Agent reasons[]"]
+        SEARCH["similarity_search(k=3)"]
+        TOP3["Top 3 Matching Strategies"]
+    end
+
+    JSON --> C1 & C2 & C3 & C4 & C5
+    C1 & C2 & C3 & C4 & C5 --> DOC
+    DOC --> HF
+    HF --> VEC
+    VEC --> FAISS_DB
+    REASONS --> SEARCH
+    FAISS_DB --> SEARCH
+    SEARCH --> TOP3
+
+    style KNOWLEDGE fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
+    style CONDITIONS fill:#e0e7ff,stroke:#6366f1,stroke-width:2px
+    style EMBEDDING fill:#fce7f3,stroke:#ec4899,stroke-width:2px
+    style VECTOR_DB fill:#dcfce7,stroke:#22c55e,stroke-width:2px
+    style QUERY fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
+```
+
+---
+
+## 4. ML Inference Pipeline
+
+```mermaid
+graph LR
+    subgraph INPUT["📥 Raw Input (19 Features)"]
+        CAT["16 Categorical Features<br/>(Gender, Contract, etc.)"]
+        NUM["3 Numerical Features<br/>(Tenure, Monthly, Total)"]
+    end
+
+    subgraph ENCODE["🔄 Encoding"]
+        LE["LabelEncoder<br/>(per categorical column)"]
+    end
+
+    subgraph REORDER["📐 Feature Ordering"]
+        FO["feature_order.pkl<br/>(ensures column alignment)"]
+    end
+
+    subgraph SCALE["⚖️ Scaling"]
+        SS["StandardScaler<br/>(tenure, MonthlyCharges, TotalCharges)"]
+    end
+
+    subgraph PREDICT["🎯 Prediction"]
+        XGB["XGBoost Classifier"]
+        PROBA["predict_proba()"]
+        THR["Threshold = 0.4<br/>(Recall-optimized)"]
+    end
+
+    subgraph RESULT["📊 Output"]
+        PROB["Churn Probability<br/>(0.0 – 1.0)"]
+        LABEL["Churn / No Churn"]
+        CONF_SCORE["Confidence Score"]
+    end
+
+    CAT --> LE
+    LE --> FO
+    NUM --> FO
+    FO --> SS
+    SS --> XGB
+    XGB --> PROBA
+    PROBA --> PROB
+    PROB --> THR
+    THR --> LABEL
+    PROB --> CONF_SCORE
+
+    style INPUT fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
+    style ENCODE fill:#e0e7ff,stroke:#6366f1,stroke-width:2px
+    style REORDER fill:#fed7aa,stroke:#f97316,stroke-width:2px
+    style SCALE fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
+    style PREDICT fill:#dcfce7,stroke:#22c55e,stroke-width:2px
+    style RESULT fill:#fce7f3,stroke:#ec4899,stroke-width:2px
+```
+
+---
+
+## 5. End-to-End Data Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as Streamlit UI
+    participant Encoder as LabelEncoders
+    participant Scaler as StandardScaler
+    participant XGBoost as XGBoost Model
+    participant LangGraph as LangGraph Agent
+    participant FAISS as FAISS VectorStore
+    participant Groq as Groq API (LLaMA 3.3)
+
+    User->>UI: Enter 19 customer features
+    User->>UI: Click "Run Churn Prediction"
+    UI->>UI: Validate inputs
+    UI->>Encoder: Encode categorical features
+    Encoder-->>UI: Encoded values
+    UI->>UI: Reorder features (feature_order.pkl)
+    UI->>Scaler: Scale numerical features
+    Scaler-->>UI: Scaled DataFrame
+    UI->>XGBoost: predict_proba(input)
+    XGBoost-->>UI: churn_prob = P(churn)
+
+    UI->>LangGraph: invoke({churn_prob, tenure, monthly})
+
+    Note over LangGraph: Node 1: Risk Assessment
+    LangGraph->>LangGraph: Classify risk level (High/Medium/Low)
+    LangGraph->>LangGraph: Identify churn reasons
+
+    Note over LangGraph: Node 2: RAG Retrieval
+    LangGraph->>FAISS: similarity_search(reasons, k=3)
+    FAISS-->>LangGraph: Top 3 strategies + sources
+
+    Note over LangGraph: Node 3: Planning
+    LangGraph->>Groq: Send structured prompt
+    Groq-->>LangGraph: JSON {risk_summary, recommendations, sources, disclaimer}
+
+    LangGraph-->>UI: final_output
+
+    UI-->>User: Display prediction result
+    UI-->>User: Display AI retention strategy
+    UI-->>User: Display confidence score
+```
+
+---
+
+## 6. Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | Streamlit | Interactive web UI |
+| **Styling** | Custom CSS + Google Fonts | Premium UI design |
+| **ML Model** | XGBoost | Churn classification |
+| **Preprocessing** | Scikit-learn (LabelEncoder, StandardScaler) | Feature encoding & scaling |
+| **Serialization** | Joblib | Model & artifact persistence |
+| **Agent Framework** | LangGraph (StateGraph) | Multi-node agentic pipeline |
+| **Vector Store** | FAISS | In-memory vector similarity search |
+| **Embeddings** | HuggingFace (all-MiniLM-L6-v2) | Text → 384-dim vectors |
+| **LLM Provider** | Groq API | Fast LLM inference |
+| **LLM Model** | LLaMA 3.3 70B Versatile | Strategy generation & reasoning |
+| **Knowledge Base** | JSON (retention_knowledge.json) | 9 curated retention strategies |
+| **Data Processing** | Pandas, NumPy | DataFrame operations |
+| **Environment** | python-dotenv | API key management |
+
+---
+
+## 7. File Structure
+
+```
+project/
+├── app.py                          # Main Streamlit application (682 lines)
+├── retention_knowledge.json        # RAG knowledge base (9 strategies)
+├── model_test.py                   # Model validation script
+├── requirements.txt                # Python dependencies
+├── .env                            # API keys (GROQ_API_KEY)
+├── .streamlit/                     # Streamlit configuration
+├── notebook_&_otherpkl/
+│   ├── CUSTOMER_CHURN_PREDICTION_Gen_AI_Project.ipynb  # Training notebook
+│   ├── milestone2_rag_testing.ipynb                    # RAG testing notebook
+│   ├── final_churn_model.pkl       # Trained XGBoost model
+│   ├── scaler.pkl                  # StandardScaler
+│   ├── threshold.pkl               # Optimized threshold (0.4)
+│   ├── encoders.pkl                # LabelEncoders (16 columns)
+│   └── feature_order.pkl           # Feature column ordering
+├── Raw_Dataset/                    # Original CSV data
+├── EDA Insights/                   # Exploratory data analysis
+├── Report/                         # Project reports
+├── images/                         # UI assets
+└── README.md                       # Project documentation
+```
