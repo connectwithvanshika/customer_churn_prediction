@@ -6,3 +6,12 @@ joblib>=1.2.0
 scikit-learn>=1.2.0
 xgboost>=1.7.0
 plotly>=5.18.0
+
+
+langgraph
+langchain
+langchain-community
+faiss-cpu
+sentence-transformers
+groq
+python-dotenv
