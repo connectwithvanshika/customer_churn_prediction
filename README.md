@@ -122,7 +122,6 @@ Preprocessing artifacts saved for deployment consistency:
 <img width="814" height="519" alt="Screenshot 2026-03-01 at 20 23 56" src="https://github.com/user-attachments/assets/73b20358-c436-4b6f-8f25-36642a904f27" />
 
 
-
 # 6. Model Performance
 ## 6.1 Classification Metrics
 
@@ -281,7 +280,7 @@ The application correctly:
 
 ## 9. Local Model Testing & Validation
 
-(Before deploying the Streamlit application, the trained XGBoost model was independently tested using a dedicated validation script (model_test.py) to ensure consistency and correctness of predictions.
+Before deploying the Streamlit application, the trained XGBoost model was independently tested using a dedicated validation script (model_test.py) to ensure consistency and correctness of predictions.
 
 The testing process verified:
 
@@ -345,12 +344,21 @@ http://localhost:8501
 
 When a user enters customer details in the UI and clicks **Run Churn Prediction**, the system performs the following steps:
 
+**Milestone 1 (ML Prediction):**
+
 1. Categorical features are encoded using the saved `encoders.pkl`
 2. Feature order is aligned using `feature_order.pkl`
 3. Numerical features are scaled using `scaler.pkl`
 4. The trained `XGBoost` model generates churn probability
 5. The saved threshold (`threshold.pkl`) is applied
-6. The final churn prediction and confidence score are displayed in the UI
+
+**Milestone 2 (Agentic AI):**
+
+6. Churn probability is passed to the LangGraph agent
+7. Risk Node classifies risk level and identifies churn reasons
+8. Retrieval Node queries the FAISS vector database for matching strategies
+9. Planning Node sends context to Groq LLM (LLaMA 3.3-70B) for structured output
+10. Final JSON output is parsed and displayed in the UI
 
 This ensures prediction consistency between training and deployment environments.
 
@@ -362,10 +370,12 @@ This ensures prediction consistency between training and deployment environments
 2. Click **Run Churn Prediction**
 3. The system outputs:
 
-   - Churn Probability Score
-   - Model Confidence Score
-   - Risk Classification (Likely to Stay / Likely to Churn)
-   - Retention Recommendation Message
+   - Churn Probability Score with gauge visualization
+   - Risk Classification (Low / Medium / High)
+   - Top Risk Factors Identified
+   - AI-Generated Retention Recommendations (from RAG + LLM)
+   - Customer Profile Summary Table
+   - Source-backed strategy references
 
 This allows proactive and data-driven retention decisions.
 
@@ -468,16 +478,396 @@ risk_node → retrieval_node → planning_node
 
 ### Agent State (AgentState):
 
-- churn_prob → model output
-- risk_level → Low / Medium / High
-- reasons → churn drivers
-- strategies → retrieved knowledge
-- sources → references
-- final_output → structured JSON response
+```python
+class AgentState(TypedDict):
+    churn_prob: float       # ML model output (0.0 to 1.0)
+    tenure: int             # Customer tenure in months
+    monthly: float          # Monthly charges in USD
+    risk_level: str         # Low / Medium / High
+    reasons: List[str]      # Identified churn drivers
+    strategies: List[str]   # Retrieved retention strategies from RAG
+    sources: List[str]      # Source references from knowledge base
+    final_output: str       # Structured JSON response from LLM
+```
 
 This ensures modular, explainable, and scalable AI behavior.
 
-## 12. Project Structure
+---
+
+## 11.3 Detailed LangGraph Node Implementation
+
+The LangGraph workflow consists of three sequential nodes. Each node has a specific responsibility and passes an updated state to the next node.
+
+### Node 1: Risk Analysis Node (`risk_node`)
+
+**Purpose:** Converts the raw churn probability into an interpretable risk level and identifies the primary reasons driving the risk.
+
+**Logic:**
+
+```python
+def risk_node(state: AgentState):
+    prob = state["churn_prob"]
+
+    # Risk classification thresholds
+    if prob > 0.7:
+        risk = "High"
+    elif prob > 0.4:
+        risk = "Medium"
+    else:
+        risk = "Low"
+
+    # Identify churn drivers from customer profile
+    reasons = []
+    if state["tenure"] < 6:
+        reasons.append("low_tenure")
+    if state["monthly"] > 80:
+        reasons.append("high_charges")
+    if not reasons:
+        reasons.append("general")
+
+    return {**state, "risk_level": risk, "reasons": reasons}
+```
+
+**Input:** `churn_prob`, `tenure`, `monthly`  
+**Output:** `risk_level` (Low/Medium/High), `reasons` (list of churn drivers)
+
+**Design Decision:** Threshold values (0.7 for High, 0.4 for Medium) align with the model's optimized classification threshold to maintain consistency between ML output and agent reasoning.
+
+---
+
+### Node 2: Strategy Retrieval Node (`retrieval_node`)
+
+**Purpose:** Uses the identified churn reasons as a semantic query to retrieve the most relevant retention strategies from the FAISS vector database.
+
+**Logic:**
+
+```python
+def retrieval_node(state: AgentState):
+    # Build query from churn drivers
+    query = " ".join(state["reasons"])
+    
+    # Semantic similarity search over the knowledge base
+    results = vectorstore.similarity_search(query, k=3)
+    
+    strategies = []
+    sources = []
+
+    for doc in results:
+        strategies.append(doc.page_content)
+        sources.append(doc.metadata["source"])
+
+    return {
+        **state,
+        "strategies": list(set(strategies)),  # Deduplicate
+        "sources": list(set(sources))          # Deduplicate
+    }
+```
+
+**Input:** `reasons` (churn drivers from Node 1)  
+**Output:** `strategies` (retrieved knowledge), `sources` (references)
+
+**Design Decision:** Deduplication (`list(set(...))`) prevents the LLM from receiving redundant information, which reduces prompt length and improves output quality.
+
+---
+
+### Node 3: Planning & Recommendation Node (`planning_node`)
+
+**Purpose:** Uses the retrieved strategies and customer risk profile to generate a structured JSON recommendation report via the Groq LLM (LLaMA 3.3-70B).
+
+**Prompt Engineering (Anti-Hallucination Rules):**
+
+```python
+prompt = f"""
+You are an AI Customer Retention Strategist.
+
+Customer churn probability: {state['churn_prob']}
+Risk level: {state['risk_level']}
+Reasons: {state['reasons']}
+
+Retrieved Strategies: {state['strategies']}
+Sources: {state['sources']}
+
+IMPORTANT RULES:
+- Use ONLY the provided strategies and sources
+- Do NOT generate new strategies
+- If no relevant strategy, say "No recommendation found"
+
+RETURN STRICT JSON:
+{{
+  "risk_summary": "Explain churn risk in detail (2-3 lines with reasoning)",
+  "recommendations": [
+    "Detailed action 1 with explanation",
+    "Detailed action 2 with explanation"
+  ],
+  "sources": ["source1", "source2"],
+  "business_impact": "Explain what happens if no action is taken (2 lines)",
+  "disclaimer": "This prediction is probabilistic and may not guarantee actual churn."
+}}
+
+ONLY return JSON. No extra text.
+"""
+```
+
+**Output Structure:**
+
+| Field | Description |
+|---|---|
+| `risk_summary` | 2-3 line explanation of the customer's churn risk |
+| `recommendations` | List of specific retention actions |
+| `sources` | Knowledge base references used |
+| `business_impact` | What happens if no action is taken |
+| `disclaimer` | Ethical AI disclosure |
+
+**Fallback Handling:**
+
+```python
+try:
+    parsed_output = json.loads(raw_output)
+except:
+    parsed_output = {
+        "risk_summary": "Parsing error",
+        "recommendations": [],
+        "sources": [],
+        "disclaimer": "Model output could not be parsed"
+    }
+```
+
+This ensures the application never crashes due to unexpected LLM output formatting.
+
+---
+
+### LangGraph Graph Construction
+
+```python
+from langgraph.graph import StateGraph
+
+builder = StateGraph(AgentState)
+
+# Register nodes
+builder.add_node("risk", risk_node)
+builder.add_node("retrieval", retrieval_node)
+builder.add_node("planning", planning_node)
+
+# Define linear workflow
+builder.set_entry_point("risk")
+builder.add_edge("risk", "retrieval")
+builder.add_edge("retrieval", "planning")
+
+# Compile the graph
+graph = builder.compile()
+
+# Invoke with customer data
+result = graph.invoke({
+    "churn_prob": 0.82,
+    "tenure": 4,
+    "monthly": 95.0
+})
+```
+
+---
+
+## 12. Retrieval-Augmented Generation (RAG) System
+
+### 12.1 RAG Architecture Overview
+
+The RAG system ensures that all retention strategy recommendations are grounded in a curated domain knowledge base — preventing the LLM from hallucinating advice that has no factual basis.
+
+```
+retention_knowledge.json → Document Loader → HuggingFace Embeddings → FAISS Vector Store → Similarity Search → LLM Context
+```
+
+### 12.2 Knowledge Base Design (`retention_knowledge.json`)
+
+The knowledge base is a structured JSON file containing expert-curated retention strategies. Each entry follows this schema:
+
+```json
+[
+  {
+    "condition": "Customer has month-to-month contract with high churn probability",
+    "strategy": "Offer a discounted upgrade to a 1-year or 2-year contract with added benefits such as free months or service bundles. Long-term contracts reduce churn by 3x.",
+    "source": "Telecom Retention Playbook - Contract Upgrade Strategy"
+  },
+  {
+    "condition": "Customer has low tenure (less than 6 months)",
+    "strategy": "Initiate an onboarding loyalty program within the first 90 days. Provide personalized check-ins, usage tips, and a first-time loyalty discount.",
+    "source": "Customer Success Handbook - Early Lifecycle Retention"
+  },
+  {
+    "condition": "Customer has high monthly charges with no bundled services",
+    "strategy": "Offer a tailored service bundle that reduces per-service cost. Highlight total savings. Bundling increases perceived value and reduces price sensitivity.",
+    "source": "Revenue Retention Research - Bundling Impact Study"
+  }
+]
+```
+
+**Knowledge Base Stats:**
+- Each entry contains: `condition`, `strategy`, `source`
+- Conditions map to real churn drivers identified in EDA
+- Sources are referenced in the final AI output for transparency
+
+### 12.3 Embedding & Vector Store Setup
+
+```python
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_core.documents import Document
+import json
+
+# Load knowledge base
+with open("retention_knowledge.json") as f:
+    knowledge = json.load(f)
+
+# Convert to LangChain Document format
+docs = []
+for item in knowledge:
+    content = f"Condition: {item['condition']}\nStrategy: {item['strategy']}"
+    docs.append(
+        Document(
+            page_content=content,
+            metadata={
+                "source": item["source"],
+                "condition": item["condition"]
+            }
+        )
+    )
+
+# Create embeddings using MiniLM (lightweight, free, no API key needed)
+embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+# Build FAISS vector store
+vectorstore = FAISS.from_documents(docs, embedding_model)
+```
+
+**Why `all-MiniLM-L6-v2`?**
+- Runs locally — no external API calls
+- Fast inference (< 1 second per query)
+- 384-dimensional embeddings — ideal for semantic similarity
+- Free — fits within the project's free-tier API budget
+
+**Why FAISS?**
+- In-memory vector search — no database server required
+- Sub-millisecond similarity search for small knowledge bases
+- Compatible with LangChain's document retrieval pipeline
+- Can be persisted to disk (`vectorstore.save_local(...)`) if needed
+
+---
+
+## 13. ML + Agentic AI Integration Flow
+
+### 13.1 How ML and Agent Communicate
+
+The ML model and the LangGraph agent are decoupled components that communicate through the `prediction_result` dictionary stored in Streamlit's session state.
+
+```
+Streamlit Form Submission
+        ↓
+Customer Dict (19 features)
+        ↓
+Encode → Reorder → Scale → XGBoost → Probability
+        ↓
+session_state["prediction_result"] = {"prob": 0.82, "churns": True}
+        ↓
+Page redirect to Results page
+        ↓
+graph.invoke({"churn_prob": prob, "tenure": tenure, "monthly": monthly})
+        ↓
+risk_node → retrieval_node → planning_node
+        ↓
+Structured JSON rendered in UI
+```
+
+### 13.2 Data Flow Between Components
+
+```python
+# Step 1: ML Prediction (in page_predict)
+prob_arr = models["model"].predict_proba(X_scaled)[0]
+prob = float(prob_arr[1])
+
+st.session_state.prediction_result = {
+    "prob": prob,
+    "churns": prob >= threshold,
+}
+
+# Step 2: Agent Invocation (in page_results)
+agent_input = {
+    "churn_prob": prob,
+    "tenure": customer.get("tenure", 0),
+    "monthly": customer.get("MonthlyCharges", 0),
+}
+
+agent_output = graph.invoke(agent_input)
+ai_output = agent_output.get("final_output", {})
+
+# Step 3: Render structured output
+recommendations = ai_output.get("recommendations", [])
+risk_summary = ai_output.get("risk_summary", "")
+business_impact = ai_output.get("business_impact", "")
+```
+
+### 13.3 Fallback Strategy
+
+If the ML model artifacts are unavailable (e.g., on a fresh deployment), a rule-based fallback system estimates churn probability:
+
+```python
+if prob is None:
+    risk = 0.1
+    if contract == "Month-to-month": risk += 0.35
+    elif contract == "One year":     risk += 0.10
+    if payment == "Electronic check": risk += 0.20
+    if tech_support == "No":          risk += 0.12
+    if internet_service == "Fiber optic": risk += 0.10
+    if online_security == "No":       risk += 0.08
+    if tenure < 12:                   risk += 0.15
+    elif tenure > 48:                 risk -= 0.10
+    if monthly > 70:                  risk += 0.08
+    prob = min(max(risk, 0.02), 0.98)
+```
+
+This ensures the agentic AI system continues to work even if ML model files fail to load.
+
+---
+
+## 14. Prompt Engineering & Hallucination Prevention
+
+### Strategy Used: Constraint-Based Prompting
+
+The LLM is given explicit rules that restrict it from generating information outside the retrieved context:
+
+```
+IMPORTANT RULES:
+- Use ONLY the provided strategies and sources
+- Do NOT generate new strategies
+- If no relevant strategy, say "No recommendation found"
+```
+
+### Why This Matters
+
+Without these constraints, the LLM could:
+- Invent strategies not grounded in the knowledge base
+- Reference sources that don't exist
+- Generate advice that contradicts telecom domain best practices
+
+### Output Format Enforcement
+
+By requiring strict JSON output with a defined schema, the system:
+- Makes responses predictable and parseable
+- Enables structured rendering in the UI
+- Forces the LLM to organize its reasoning into predefined categories
+- Prevents free-form text that could mix fact and hallucination
+
+### Disclaimer Injection
+
+Every response includes a mandatory disclaimer field:
+
+```json
+"disclaimer": "This prediction is probabilistic and may not guarantee actual churn."
+```
+
+This ensures ethical AI disclosure — users understand the system provides decision support, not deterministic predictions.
+
+---
+
+## 15. Project Structure
 
 The repository is organized to ensure clarity, reproducibility, and deployment readiness.
 
@@ -517,8 +907,9 @@ customer_churn_prediction/
 │   ├── Ui_1.png
 │   └── Ui_2.png
 │
-├── Report/                              # Final report
-│   └── Telecom_Churn_...pdf
+├── Report/                              # Final report and workflow docs
+│   ├── Agent_Workflow_Documentation.pdf
+│   └── Telecom_Churn_Report.pdf
 ```
 
 
@@ -537,6 +928,182 @@ customer_churn_prediction/
 This structure ensures that the training pipeline, deployment pipeline, and evaluation pipeline remain fully reproducible.
 
 ---
+
+---
+
+## 16. Testing & Validation
+
+### 16.1 ML Model Validation (`model_test.py`)
+
+The model was independently validated before deployment using a local test script.
+
+```python
+import joblib
+import numpy as np
+import pandas as pd
+
+# Load all artifacts
+model     = joblib.load("notebook_&_otherpkl/final_churn_model.pkl")
+scaler    = joblib.load("notebook_&_otherpkl/scaler.pkl")
+encoders  = joblib.load("notebook_&_otherpkl/encoders.pkl")
+threshold = float(joblib.load("notebook_&_otherpkl/threshold.pkl"))
+feature_order = joblib.load("notebook_&_otherpkl/feature_order.pkl")
+
+# Test customer profile
+test_customer = {
+    "gender": "Male",
+    "SeniorCitizen": 0,
+    "Partner": "No",
+    "Dependents": "No",
+    "tenure": 3,
+    "PhoneService": "Yes",
+    "MultipleLines": "No",
+    "InternetService": "Fiber optic",
+    "OnlineSecurity": "No",
+    "OnlineBackup": "No",
+    "DeviceProtection": "No",
+    "TechSupport": "No",
+    "StreamingTV": "No",
+    "StreamingMovies": "No",
+    "Contract": "Month-to-month",
+    "PaperlessBilling": "Yes",
+    "PaymentMethod": "Electronic check",
+    "MonthlyCharges": 85.0,
+    "TotalCharges": 255.0,
+}
+
+# Encode
+row = {}
+for feat in feature_order:
+    val = test_customer.get(feat, 0)
+    if feat in encoders:
+        val = int(encoders[feat].transform([val])[0])
+    elif isinstance(val, str):
+        val = 1 if val in ["Yes", "Female"] else 0
+    row[feat] = val
+
+X = pd.DataFrame([row])[feature_order]
+X_scaled = scaler.transform(X)
+
+prob = model.predict_proba(X_scaled)[0][1]
+prediction = int(prob >= threshold)
+
+print(f"Churn Probability : {prob:.4f}")
+print(f"Threshold Applied : {threshold}")
+print(f"Prediction        : {'CHURN' if prediction == 1 else 'NO CHURN'}")
+```
+
+### 16.2 RAG Retrieval Validation
+
+To verify the RAG system returns relevant results:
+
+```python
+# Test query
+test_query = "low_tenure high_charges"
+results = vectorstore.similarity_search(test_query, k=3)
+
+for i, doc in enumerate(results):
+    print(f"\n--- Result {i+1} ---")
+    print(f"Content : {doc.page_content[:200]}")
+    print(f"Source  : {doc.metadata['source']}")
+```
+
+Expected behavior: Results should match strategies related to new customer onboarding and high billing concerns.
+
+### 16.3 Agent Pipeline Validation
+
+End-to-end test of the full LangGraph pipeline:
+
+```python
+# Test agent with a high-risk customer profile
+test_input = {
+    "churn_prob": 0.82,
+    "tenure": 3,
+    "monthly": 95.0,
+}
+
+output = graph.invoke(test_input)
+
+print("Risk Level    :", output["risk_level"])
+print("Reasons       :", output["reasons"])
+print("Strategies    :", len(output["strategies"]), "retrieved")
+print("Final Output  :", output["final_output"])
+```
+
+**Validation Checklist:**
+
+- [x] Model loads without error
+- [x] Encoder transforms all categorical features correctly
+- [x] Feature order matches training pipeline
+- [x] Scaler normalizes numerical values correctly
+- [x] XGBoost outputs probability in [0, 1] range
+- [x] Threshold correctly classifies churn vs no-churn
+- [x] FAISS retrieves semantically relevant strategies
+- [x] LangGraph executes all 3 nodes in order
+- [x] Groq API returns valid JSON response
+- [x] JSON parser handles malformed responses gracefully
+- [x] UI renders all output fields without error
+
+---
+
+## 17. Troubleshooting
+
+### Common Issues & Fixes
+
+**Issue 1: `Error loading model file`**
+```
+Error loading model file: 'notebook_&_otherpkl/final_churn_model.pkl'
+```
+**Fix:** Ensure you are running `streamlit run app.py` from the project root directory, not from inside a subdirectory. All `.pkl` files must be in the `notebook_&_otherpkl/` folder relative to `app.py`.
+
+---
+
+**Issue 2: `GROQ_API_KEY not found`**
+```
+AuthenticationError: No API key provided
+```
+**Fix:** Create a `.env` file in the project root:
+```
+GROQ_API_KEY=gsk_your_key_here
+```
+Get a free key at https://console.groq.com. The `python-dotenv` package loads it automatically on startup.
+
+---
+
+**Issue 3: `FAISS index build fails`**
+```
+RuntimeError: FAISS index creation failed
+```
+**Fix:** Ensure `retention_knowledge.json` exists in the project root. The file must be valid JSON with fields: `condition`, `strategy`, `source`. Install dependencies:
+```bash
+pip install faiss-cpu sentence-transformers
+```
+
+---
+
+**Issue 4: `LLM output could not be parsed`**
+```
+Parsing error — Model output could not be parsed
+```
+**Fix:** This occurs when Groq's API returns non-JSON text (e.g., markdown code blocks). The system handles this with a fallback, but to reduce frequency: ensure the prompt ends with `ONLY return JSON. No extra text.` — which is already implemented.
+
+---
+
+**Issue 5: `HuggingFace model download fails`**
+```
+ConnectionError: Unable to fetch model 'all-MiniLM-L6-v2'
+```
+**Fix:** On first run, the embedding model downloads from HuggingFace (~80MB). Ensure internet connectivity. After first run, it caches locally and works offline.
+
+---
+
+**Issue 6: Application crashes on Streamlit Cloud**
+**Fix:** Ensure these files are in your repository root (not just locally):
+- `retention_knowledge.json`
+- `requirements.txt` (with all dependencies)
+- `.streamlit/config.toml`
+
+Add secrets on Streamlit Cloud: Settings → Secrets → Add `GROQ_API_KEY`.
 
 ---
 
@@ -566,54 +1133,25 @@ This improves efficiency and makes the system truly agentic.
 - Prevents hallucination using strict prompts  
 - Ensures consistent output structure
 
-
-## 12.1 Retrieval-Augmented Generation (RAG)
-
-The system uses RAG to ensure grounded and context-aware recommendations.
-
-### Process:
-
-- Knowledge is stored in `retention_knowledge.json`
-- Converted into documents
-- Embedded using MiniLM model
-- Stored in FAISS vector database
-- Retrieved using similarity search
-
-### Benefits:
-
-- Reduces hallucination
-- Improves accuracy
-- Provides source-based recommendations
-
-## 12.2 Prompt Engineering & Safety
-
-The LLM is controlled using strict instructions:
-
-- Use only retrieved strategies
-- Do not generate new information
-- Return JSON output
-- Handle missing recommendations safely
-
-This ensures reliable and explainable outputs.
-
-## 13. Technology Stack
+## 18. Technology Stack
 
 | Component | Technology |
-|------------|------------|
+|---|---|
 | Data Analysis | Pandas, NumPy |
 | Visualization | Matplotlib, Seaborn, Plotly |
 | ML Models | Scikit-learn, XGBoost |
 | Preprocessing | StandardScaler, LabelEncoder |
 | Deployment | Streamlit |
-| Model Storage | Joblib |
+| Model Storage | Joblib, Pickle |
 | Agent Framework | LangGraph |
 | Vector Database | FAISS |
-| Embeddings | HuggingFace MiniLM |
-| LLM | Groq (LLaMA 3.3) |
+| Embeddings | HuggingFace MiniLM (all-MiniLM-L6-v2) |
+| LLM | Groq API (LLaMA 3.3-70B-Versatile) |
+| Environment Config | python-dotenv |
 
 ---
 
-## 14. Milestone Deliverables
+## 19. Milestone Deliverables
 
 ### Milestone 1 (Completed)
 
@@ -627,16 +1165,20 @@ This ensures reliable and explainable outputs.
 
 ### Milestone 2 (Completed)
 
-- Agentic AI workflow using LangGraph
-- RAG-based retrieval using FAISS
-- Structured JSON output generation
-- Prompt engineering for hallucination control
-- Explainable recommendations with sources
-- Integrated ML + AI pipeline
+- Agentic AI workflow using LangGraph (3-node pipeline)
+- RAG-based retrieval using FAISS + HuggingFace embeddings
+- Curated retention knowledge base (`retention_knowledge.json`)
+- Structured JSON output generation via Groq LLM
+- Prompt engineering for hallucination prevention
+- Explainable recommendations with source references
+- Integrated ML + Agentic AI pipeline in single Streamlit app
+- Analytics Dashboard with 6 interactive Plotly charts
+- Full results page with risk factors, gauge chart, and retention actions
+- Hosted deployment on Streamlit Community Cloud
 
 ---
 
-## 15. Future Improvements
+## 20. Future Improvements
 
 - Add conditional agent flow (skip steps for low-risk users)  
 - Integrate SHAP for explainable AI insights  
@@ -653,7 +1195,7 @@ This ensures reliable and explainable outputs.
 
 ---
 
-## 16. Conclusion
+## 21. Conclusion
 
 This project successfully implements an end-to-end customer churn intelligence system, starting from raw data processing to a fully deployed interactive application.
 
