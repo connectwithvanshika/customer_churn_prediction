@@ -3,4 +3,4 @@ __pycache__/
 *.pyc
 *.pkl
 *.csv
-.DS_Store
+.DS_Store.env

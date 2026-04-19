@@ -1,22 +1,260 @@
+"""
+Customer Churn Intelligence System (Agentic AI Version)
+
+This Streamlit application predicts customer churn using a trained ML model
+and enhances it with an agentic AI system for retention strategy generation.
+
+Key Features:
+- ML-based churn prediction (XGBoost)
+- RAG (Retrieval-Augmented Generation) for retention strategies
+- LangGraph-based agent workflow (risk -> retrieval -> planning)
+- Structured AI output (risk summary, recommendations, sources)
+
+Goal:
+Move from prediction -> actionable business decisions
+"""
+
+# Required Libraries
 import streamlit as st
 import pandas as pd
+import joblib
 import numpy as np
+import json
+from langgraph.graph import StateGraph
+from typing import TypedDict, List
+from groq import Groq
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_core.documents import Document
 import plotly.graph_objects as go
 import plotly.express as px
 import pickle
 import os
-import json
 
 
-# ─── Page Config ────────────────────────────────────────────────────────────
+# Page Config
 st.set_page_config(
     page_title="ChurnGuard AI",
-    page_icon="🛡️",
+    page_icon="shield",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# ─── Theme & CSS ────────────────────────────────────────────────────────────
+# Model & Preprocessing Loaders
+@st.cache_resource
+def load_model():
+    """Loads the trained XGBoost model from disk."""
+    try:
+        return joblib.load("notebook_&_otherpkl/final_churn_model.pkl")
+    except Exception:
+        st.error("Error loading model file: 'notebook_&_otherpkl/final_churn_model.pkl'")
+        st.stop()
+
+
+@st.cache_resource
+def load_scaler():
+    """Loads the StandardScaler used during training."""
+    try:
+        return joblib.load("notebook_&_otherpkl/scaler.pkl")
+    except Exception:
+        st.error("Error loading scaler file: 'notebook_&_otherpkl/scaler.pkl'")
+        st.stop()
+
+@st.cache_resource
+def load_threshold():
+    """Loads the optimized classification threshold."""
+    try:
+        return float(joblib.load("notebook_&_otherpkl/threshold.pkl"))
+    except Exception:
+        st.error("Error loading threshold file: 'notebook_&_otherpkl/threshold.pkl'")
+        st.stop()
+
+
+@st.cache_resource
+def load_encoders():
+    """Loads saved LabelEncoders for categorical features."""
+    try:
+        return joblib.load("notebook_&_otherpkl/encoders.pkl")
+    except Exception:
+        st.error("Error loading encoders file: 'notebook_&_otherpkl/encoders.pkl'")
+        st.stop()
+
+@st.cache_resource
+def load_feature_order():
+    """Loads feature ordering used during model training."""
+    try:
+        return joblib.load("notebook_&_otherpkl/feature_order.pkl")
+    except Exception:
+        st.error("Error loading feature_order.pkl")
+        st.stop()
+
+
+# Load all required artifacts
+model     = load_model()
+scaler    = load_scaler()
+threshold = load_threshold()
+encoders  = load_encoders()
+
+
+# RAG: Retention Knowledge Base
+with open("retention_knowledge.json") as f:
+    knowledge = json.load(f)
+
+# Convert JSON to documents
+docs = []
+for item in knowledge:
+    content = f"Condition: {item['condition']}\nStrategy: {item['strategy']}"
+    
+    docs.append(
+        Document(
+            page_content=content,
+            metadata={
+                "source": item["source"],
+                "condition": item["condition"]
+            }
+        )
+    )
+
+# Create embeddings + vector store (FAISS)
+embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vectorstore = FAISS.from_documents(docs, embedding_model)
+
+
+from dotenv import load_dotenv
+load_dotenv()
+
+# LLM Setup (Groq API)
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+
+# Agent State Definition
+class AgentState(TypedDict):
+    churn_prob: float
+    tenure: int
+    monthly: float
+    
+    risk_level: str
+    reasons: List[str]
+    
+    strategies: List[str]
+    sources: List[str]
+    
+    final_output: str
+
+# Node 1: Risk Analysis
+def risk_node(state: AgentState):
+    prob = state["churn_prob"]
+
+    if prob > 0.7:
+        risk = "High"
+    elif prob > 0.4:
+        risk = "Medium"
+    else:
+        risk = "Low"
+
+    reasons = []
+
+    if state["tenure"] < 6:
+        reasons.append("low_tenure")
+
+    if state["monthly"] > 80:
+        reasons.append("high_charges")
+
+    if not reasons:
+        reasons.append("general")
+
+    return {**state, "risk_level": risk, "reasons": reasons}
+
+
+# Node 2: Strategy Retrieval (RAG)
+def retrieval_node(state: AgentState):
+    
+    query = " ".join(state["reasons"])
+    
+    results = vectorstore.similarity_search(query, k=3)
+    
+    strategies = []
+    sources = []
+
+    for doc in results:
+        strategies.append(doc.page_content)
+        sources.append(doc.metadata["source"])
+
+    return {
+        **state,
+        "strategies": list(set(strategies)),
+        "sources": list(set(sources))
+    }
+
+# Node 3: Planning & Recommendation
+def planning_node(state: AgentState):
+
+    prompt = f"""
+You are an AI Customer Retention Strategist.
+
+Customer churn probability: {state['churn_prob']}
+Risk level: {state['risk_level']}
+Reasons: {state['reasons']}
+
+Retrieved Strategies: {state['strategies']}
+Sources: {state['sources']}
+
+IMPORTANT RULES:
+- Use ONLY the provided strategies and sources
+- Do NOT generate new strategies
+- If no relevant strategy, say "No recommendation found"
+
+RETURN STRICT JSON:
+
+{{
+  "risk_summary": "Explain churn risk in detail (2-3 lines with reasoning)",
+  "recommendations": [
+    "Detailed action 1 with explanation",
+    "Detailed action 2 with explanation"
+  ],
+  "sources": ["source1", "source2"],
+  "business_impact": "Explain what happens if no action is taken (2 lines)",
+  "disclaimer": "This prediction is probabilistic and may not guarantee actual churn."
+}}
+
+ONLY return JSON. No extra text.
+"""
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    raw_output = response.choices[0].message.content
+
+    try:
+        parsed_output = json.loads(raw_output)
+    except:
+        parsed_output = {
+            "risk_summary": "Parsing error",
+            "recommendations": [],
+            "sources": [],
+            "disclaimer": "Model output could not be parsed"
+        }
+
+    return {**state, "final_output": parsed_output}
+
+# LangGraph Workflow
+builder = StateGraph(AgentState)
+
+builder.add_node("risk", risk_node)
+builder.add_node("retrieval", retrieval_node)
+builder.add_node("planning", planning_node)
+
+builder.set_entry_point("risk")
+
+builder.add_edge("risk", "retrieval")
+builder.add_edge("retrieval", "planning")
+
+graph = builder.compile()
+
+
+# Theme & CSS
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -47,11 +285,10 @@ html, body, [data-testid="stAppViewContainer"] {
 [data-testid="stSidebar"] { display: none; }
 [data-testid="stDecoration"] { display: none; }
 
-/* Hide default streamlit elements */
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding: 0 2rem 3rem 2rem !important; max-width: 100% !important; }
 
-/* ── Top Nav ── */
+/* Top Nav */
 .topnav {
     display: flex;
     align-items: center;
@@ -73,7 +310,7 @@ html, body, [data-testid="stAppViewContainer"] {
 .brand-name { font-size: 1.1rem; font-weight: 700; color: var(--text); }
 .brand-sub { font-size: 0.7rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
 
-/* ── KPI Cards ── */
+/* KPI Cards */
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 .kpi-card {
     background: var(--surface);
@@ -94,7 +331,7 @@ html, body, [data-testid="stAppViewContainer"] {
 .kpi-sub { font-size: 0.75rem; color: var(--muted); }
 .kpi-icon { position: absolute; right: 18px; top: 18px; font-size: 1.6rem; opacity: 0.3; }
 
-/* ── Charts ── */
+/* Charts */
 .chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .chart-card {
@@ -105,7 +342,7 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 .chart-title { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; font-weight: 600; }
 
-/* ── Insight Cards ── */
+/* Insight Cards */
 .insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
 .insight-card {
     background: var(--surface);
@@ -117,11 +354,11 @@ html, body, [data-testid="stAppViewContainer"] {
 .insight-title { font-size: 0.82rem; font-weight: 600; margin-bottom: 6px; color: var(--ins-color, var(--accent)); }
 .insight-text { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
 
-/* ── Page Titles ── */
+/* Page Titles */
 .page-title { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
 .page-subtitle { font-size: 0.85rem; color: var(--muted); margin-bottom: 28px; }
 
-/* ── Form Sections ── */
+/* Form Sections */
 .form-section {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -136,7 +373,7 @@ html, body, [data-testid="stAppViewContainer"] {
     display: flex; align-items: center; gap: 8px;
 }
 
-/* ── Streamlit input overrides ── */
+/* Streamlit input overrides */
 .stSelectbox > div > div,
 .stNumberInput > div > div > input,
 .stSlider { 
@@ -146,7 +383,7 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 label[data-testid="stWidgetLabel"] p { color: var(--muted) !important; font-size: 0.8rem !important; }
 
-/* ── Primary Button ── */
+/* Primary Button */
 div[data-testid="stButton"] > button {
     background: linear-gradient(135deg, var(--accent), var(--accent2)) !important;
     color: white !important;
@@ -164,7 +401,7 @@ div[data-testid="stButton"] > button:hover {
     box-shadow: 0 8px 20px rgba(99,102,241,0.35) !important;
 }
 
-/* ── Results Page ── */
+/* Results Page */
 .prob-hero {
     text-align: center;
     padding: 40px 20px;
@@ -223,7 +460,6 @@ div[data-testid="stButton"] > button:hover {
 .summary-table td:first-child { color: var(--muted); width: 45%; }
 .summary-table td:last-child { font-weight: 500; color: var(--text); }
 
-/* Back button style */
 .back-btn > div[data-testid="stButton"] > button {
     background: var(--surface) !important;
     border: 1px solid var(--border) !important;
@@ -233,7 +469,7 @@ div[data-testid="stButton"] > button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# ─── Session State ────────────────────────────────────────────────────────────
+# Session State
 if "page" not in st.session_state:
     st.session_state.page = "dashboard"
 if "prediction_result" not in st.session_state:
@@ -241,7 +477,7 @@ if "prediction_result" not in st.session_state:
 if "customer_data" not in st.session_state:
     st.session_state.customer_data = None
 
-# ─── Data & Model Loading ─────────────────────────────────────────────────────
+# Data & Model Loading
 @st.cache_data
 def load_data():
     paths = [
@@ -251,12 +487,14 @@ def load_data():
         "dataset/WA_Fn-UseC_-Telco-Customer-Churn.csv",
         "Telco-Customer-Churn.csv",
     ]
+    
     for p in paths:
         if os.path.exists(p):
             df = pd.read_csv(p)
             df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
             df.dropna(subset=["TotalCharges"], inplace=True)
             return df
+
     return None
 
 @st.cache_resource
@@ -282,17 +520,10 @@ def load_models():
                 break
     return loaded
 
-def load_retention_knowledge():
-    for p in ["retention_knowledge.json", "data/retention_knowledge.json"]:
-        if os.path.exists(p):
-            with open(p) as f:
-                return json.load(f)
-    return {}
-
 df = load_data()
 models = load_models()
 
-# ─── Plotly Theme Helper ──────────────────────────────────────────────────────
+# Plotly Theme Helper
 PLOT_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
@@ -310,49 +541,47 @@ PLOT_LAYOUT = dict(
 )
 COLORS = ["#6366f1", "#f43f5e", "#06b6d4", "#10b981", "#f59e0b", "#a78bfa"]
 
-# ─── Navigation ──────────────────────────────────────────────────────────────
+# Navigation
 def topnav():
     st.markdown("""
     <div class="topnav">
         <div class="brand">
-            <div class="brand-icon">🛡️</div>
+            <div class="brand-icon">AI</div>
             <div>
                 <div class="brand-name">ChurnGuard AI</div>
-                <div class="brand-sub">Customer Intelligence &amp; Retention Platform</div>
+                <div class="brand-sub">Customer Intelligence & Retention Platform</div>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    c1, c2, c3, spacer = st.columns([1, 1, 1, 5])
+    c1, c2, c3, spacer = st.columns([1.2, 1.2, 1.2, 2])
     with c1:
-        if st.button("📊 Analytics Dashboard",
+        if st.button("Analytics Dashboard",
                      type="primary" if st.session_state.page == "dashboard" else "secondary",
                      use_container_width=True):
             st.session_state.page = "dashboard"
             st.rerun()
     with c2:
-        if st.button("🔮 Predict Churn",
+        if st.button("Predict Churn",
                      type="primary" if st.session_state.page == "predict" else "secondary",
                      use_container_width=True):
             st.session_state.page = "predict"
             st.rerun()
     with c3:
-        if st.button("📋 Results & Insights",
+        if st.button("Results & Insights",
                      type="primary" if st.session_state.page == "results" else "secondary",
                      use_container_width=True):
             st.session_state.page = "results"
             st.rerun()
 
-# ═══════════════════════════════════════════════════════════════
-#  PAGE 1 — ANALYTICS DASHBOARD
-# ═══════════════════════════════════════════════════════════════
+# PAGE 1 - ANALYTICS DASHBOARD
 def page_dashboard():
     st.markdown('<div class="page-title">Analytics Dashboard</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Real-time insights from the Telco Customer Churn dataset (7,043 customers)</div>', unsafe_allow_html=True)
 
     if df is None:
-        st.warning("⚠️ Dataset not found. Place `WA_Fn-UseC_-Telco-Customer-Churn.csv` in the project root to enable charts.")
+        st.warning("Dataset not found. Place WA_Fn-UseC_-Telco-Customer-Churn.csv in the project root to enable charts.")
         st.info("Expected KPIs from repository:\n- Total Customers: 7,043\n- Churn Rate: 26.5%\n- Avg Tenure: 32.4 months\n- Month-to-Month customers: 55%")
         return
 
@@ -363,13 +592,13 @@ def page_dashboard():
     avg_monthly = df["MonthlyCharges"].mean()
     pct_m2m = (df["Contract"] == "Month-to-month").sum() / len(df) * 100
 
-    # ── 4 KPI Cards ──
+    # 4 KPI Cards
     st.markdown('<div class="kpi-grid">', unsafe_allow_html=True)
     kpis = [
-        ("Total Customers", f"{len(df):,}", "Active accounts in dataset", "🏢", "#6366f1"),
-        ("Churn Rate", f"{churn_rate:.1f}%", f"{len(churn_yes):,} customers churned", "📉", "#f43f5e"),
-        ("Avg Monthly Charges", f"${avg_monthly:.2f}", "Per customer per month", "💳", "#06b6d4"),
-        ("Month-to-Month %", f"{pct_m2m:.1f}%", f"Highest churn-risk segment", "⚠️", "#f59e0b"),
+        ("Total Customers", f"{len(df):,}", "Active accounts in dataset", "C", "#6366f1"),
+        ("Churn Rate", f"{churn_rate:.1f}%", f"{len(churn_yes):,} customers churned", "D", "#f43f5e"),
+        ("Avg Monthly Charges", f"${avg_monthly:.2f}", "Per customer per month", "M", "#06b6d4"),
+        ("Month-to-Month %", f"{pct_m2m:.1f}%", f"Highest churn-risk segment", "R", "#f59e0b"),
     ]
     for label, val, sub, icon, color in kpis:
         st.markdown(f"""
@@ -382,10 +611,10 @@ def page_dashboard():
         """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Row 1: 2 charts ──
+    # Row 1: 2 charts
     c1, c2 = st.columns(2)
 
-    # Chart 1 — Churn Distribution (Donut)
+    # Chart 1 - Churn Distribution
     with c1:
         st.markdown('<div class="chart-card"><div class="chart-title">Churn Distribution</div>', unsafe_allow_html=True)
         counts = df["Churn"].value_counts()
@@ -407,7 +636,7 @@ def page_dashboard():
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Chart 2 — Churn by Contract Type
+    # Chart 2 - Churn by Contract Type
     with c2:
         st.markdown('<div class="chart-card"><div class="chart-title">Churn Rate by Contract Type</div>', unsafe_allow_html=True)
         contract_churn = df.groupby("Contract")["Churn"].apply(
@@ -430,10 +659,10 @@ def page_dashboard():
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Row 2: 2 charts ──
+    # Row 2: 2 charts
     c3, c4 = st.columns(2)
 
-    # Chart 3 — Churn by Internet Service
+    # Chart 3 - Churn by Internet Service
     with c3:
         st.markdown('<div class="chart-card"><div class="chart-title">Churn Rate by Internet Service</div>', unsafe_allow_html=True)
         isp_churn = df.groupby("InternetService")["Churn"].apply(
@@ -457,7 +686,7 @@ def page_dashboard():
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Chart 4 — Churn by Payment Method
+    # Chart 4 - Churn by Payment Method
     with c4:
         st.markdown('<div class="chart-card"><div class="chart-title">Churn Rate by Payment Method</div>', unsafe_allow_html=True)
         pay_churn = df.groupby("PaymentMethod")["Churn"].apply(
@@ -483,10 +712,10 @@ def page_dashboard():
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Row 3: 2 charts ──
+    # Row 3: 2 charts
     c5, c6 = st.columns(2)
 
-    # Chart 5 — Tenure Distribution by Churn (Histogram overlay)
+    # Chart 5 - Tenure Distribution
     with c5:
         st.markdown('<div class="chart-card"><div class="chart-title">Tenure Distribution by Churn</div>', unsafe_allow_html=True)
         fig = go.Figure()
@@ -510,7 +739,7 @@ def page_dashboard():
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Chart 6 — Monthly Charges vs Churn (Box plot)
+    # Chart 6 - Monthly Charges
     with c6:
         st.markdown('<div class="chart-card"><div class="chart-title">Monthly Charges vs Churn</div>', unsafe_allow_html=True)
         fig = go.Figure()
@@ -533,13 +762,13 @@ def page_dashboard():
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Key Insights ──
+    # Key Insights
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px;">🔍 Key Business Insights</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px;">Key Business Insights</div>', unsafe_allow_html=True)
 
     insights = [
         ("#f43f5e", "Month-to-Month Contract Risk",
-         f"M2M customers churn at ~{df[df['Contract']=='Month-to-month']['Churn'].apply(lambda x: 1 if x=='Yes' else 0).mean()*100:.0f}% — nearly 3× higher than two-year plans."),
+         f"M2M customers churn at ~{df[df['Contract']=='Month-to-month']['Churn'].apply(lambda x: 1 if x=='Yes' else 0).mean()*100:.0f}% — nearly 3x higher than two-year plans."),
         ("#f43f5e", "Electronic Check Payment",
          "E-check customers show the highest churn rate among all payment methods (~45%)."),
         ("#f59e0b", "Low Tenure = High Risk",
@@ -562,16 +791,14 @@ def page_dashboard():
     st.markdown('</div>', unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════
-#  PAGE 2 — PREDICT CHURN
-# ═══════════════════════════════════════════════════════════════
+# PAGE 2 - PREDICT CHURN
 def page_predict():
     st.markdown('<div class="page-title">Predict Customer Churn</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Fill in the customer profile below to get an AI-powered churn prediction</div>', unsafe_allow_html=True)
 
     with st.form("churn_form"):
-        # ── Demographics ──
-        st.markdown('<div class="form-section"><div class="form-section-title">👤 Customer Demographics</div>', unsafe_allow_html=True)
+        # Demographics
+        st.markdown('<div class="form-section"><div class="form-section-title">Customer Demographics</div>', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
         with c1: gender = st.selectbox("Gender", ["Male", "Female"])
         with c2: senior = st.selectbox("Senior Citizen", ["No", "Yes"])
@@ -579,8 +806,8 @@ def page_predict():
         with c4: dependents = st.selectbox("Has Dependents", ["Yes", "No"])
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # ── Services ──
-        st.markdown('<div class="form-section"><div class="form-section-title">📡 Services Subscribed</div>', unsafe_allow_html=True)
+        # Services
+        st.markdown('<div class="form-section"><div class="form-section-title">Services Subscribed</div>', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
         with c1: phone_service = st.selectbox("Phone Service", ["Yes", "No"])
         with c2: multiple_lines = st.selectbox("Multiple Lines", ["No", "Yes", "No phone service"])
@@ -597,8 +824,8 @@ def page_predict():
         with c9: streaming_movies = st.selectbox("Streaming Movies", ["No", "Yes", "No internet service"])
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # ── Account Info ──
-        st.markdown('<div class="form-section"><div class="form-section-title">🗂️ Account Information</div>', unsafe_allow_html=True)
+        # Account Info
+        st.markdown('<div class="form-section"><div class="form-section-title">Account Information</div>', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
         with c1: tenure = st.slider("Tenure (months)", 0, 72, 12)
         with c2: contract = st.selectbox("Contract Type", ["Month-to-month", "One year", "Two year"])
@@ -612,7 +839,7 @@ def page_predict():
         with c6: total = st.number_input("Total Charges ($)", 0.0, 10000.0, float(tenure * monthly), step=0.01)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        submitted = st.form_submit_button("🔮 Run Churn Analysis", use_container_width=True)
+        submitted = st.form_submit_button("Run Churn Analysis", use_container_width=True)
 
     if submitted:
         customer = {
@@ -628,7 +855,7 @@ def page_predict():
         }
         st.session_state.customer_data = customer
 
-        # Try model prediction
+        # Model prediction
         prob = None
         if "model" in models and "scaler" in models:
             try:
@@ -660,7 +887,7 @@ def page_predict():
                 st.warning(f"Model prediction error: {e}. Using rule-based estimate.")
 
         if prob is None:
-            # Rule-based fallback (calibrated from EDA findings)
+            # Rule-based fallback
             risk = 0.1
             if contract == "Month-to-month": risk += 0.35
             elif contract == "One year": risk += 0.1
@@ -681,21 +908,29 @@ def page_predict():
         st.rerun()
 
 
-# ═══════════════════════════════════════════════════════════════
-#  PAGE 3 — RESULTS & INSIGHTS
-# ═══════════════════════════════════════════════════════════════
+# PAGE 3 - RESULTS & INSIGHTS
 def page_results():
     result = st.session_state.prediction_result
     customer = st.session_state.customer_data
 
     if result is None or customer is None:
-        st.info("No prediction yet. Please fill the form on the **Predict Churn** page.")
-        if st.button("← Go to Predict Churn"):
+        st.info("No prediction yet. Please fill the form on the Predict Churn page.")
+        if st.button("Go to Predict Churn"):
             st.session_state.page = "predict"
             st.rerun()
         return
 
     prob = result["prob"]
+    
+    # Run Agent
+    agent_input = {
+        "churn_prob": prob,
+        "tenure": customer.get("tenure", 0),
+        "monthly": customer.get("MonthlyCharges", 0),
+    }
+
+    agent_output = graph.invoke(agent_input)
+    ai_output = agent_output.get("final_output", {})
     pct = int(prob * 100)
     churns = result["churns"]
 
@@ -715,7 +950,7 @@ def page_results():
     st.markdown('<div class="page-title">Prediction Results & Insights</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">AI-powered churn analysis and retention recommendations</div>', unsafe_allow_html=True)
 
-    # ── Hero + Gauge Row ──
+    # Hero + Gauge Row
     col_hero, col_gauge = st.columns([1, 1])
 
     with col_hero:
@@ -755,11 +990,11 @@ def page_results():
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-    # ── Risk Factors + Recommendations ──
+    # Risk Factors + Recommendations
     col_risk, col_rec = st.columns(2)
 
     with col_risk:
-        st.markdown('<div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px;">🔎 Risk Factors Identified</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px;">Risk Factors Identified</div>', unsafe_allow_html=True)
         
         factors = []
         if customer.get("Contract") == "Month-to-month":
@@ -794,33 +1029,24 @@ def page_results():
             """, unsafe_allow_html=True)
 
     with col_rec:
-        st.markdown('<div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px;">💡 Retention Recommendations</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px;">Retention Recommendations</div>', unsafe_allow_html=True)
 
-        recs = []
-        if customer.get("Contract") == "Month-to-month":
-            recs.append(("Offer Contract Upgrade", "Provide a 15–20% discount for switching to a 1 or 2-year contract. Long-term contracts reduce churn rate by over 80%."))
-        if customer.get("PaymentMethod") == "Electronic check":
-            recs.append(("Switch to Auto-Pay", "Offer a $5/month discount to switch to automatic bank transfer or credit card — reduces payment friction significantly."))
-        if customer.get("TechSupport") == "No":
-            recs.append(("Bundle Tech Support", "Offer tech support at a reduced add-on rate. Customers with support churn at ~15% vs 42% without."))
-        if customer.get("OnlineSecurity") == "No":
-            recs.append(("Add Security Bundle", "Offer online security as an affordable add-on. Bundled service customers show significantly lower churn rates."))
-        if customer.get("tenure", 72) < 12:
-            recs.append(("Early Loyalty Reward", "Introduce a loyalty bonus at the 6-month and 12-month marks to anchor new customers to the brand."))
-        recs.append(("Personalized Outreach", "Assign a dedicated account manager for proactive check-ins before the next billing cycle."))
+        recommendations = ai_output.get("recommendations", [])
 
-        for i, (title, desc) in enumerate(recs[:4], 1):
-            st.markdown(f"""
-            <div class="rec-card">
-                <div class="rec-num">Recommendation {i}</div>
-                <div class="rec-title">{title}</div>
-                <div class="rec-desc">{desc}</div>
-            </div>
-            """, unsafe_allow_html=True)
+        if not recommendations:
+            st.warning("No AI recommendations available.")
+        else:
+            for i, rec in enumerate(recommendations[:4], 1):
+                st.markdown(f"""
+                <div class="rec-card">
+                    <div class="rec-num">Recommendation {i}</div>
+                    <div class="rec-desc">{rec}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-    # ── Customer Summary Table ──
+    # Customer Summary Table
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px;">📋 Customer Profile Summary</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px;">Customer Profile Summary</div>', unsafe_allow_html=True)
 
     rows = [
         ("Contract", customer.get("Contract", "—")),
@@ -841,24 +1067,22 @@ def page_results():
     html += "</table></div>"
     st.markdown(html, unsafe_allow_html=True)
 
-    # ── Action Buttons ──
+    # Action Buttons
     st.markdown("<br>", unsafe_allow_html=True)
     btn1, btn2, btn3 = st.columns([1, 1, 4])
     with btn1:
-        if st.button("← Predict Another Customer", use_container_width=True):
+        if st.button("Predict Another Customer", use_container_width=True):
             st.session_state.prediction_result = None
             st.session_state.customer_data = None
             st.session_state.page = "predict"
             st.rerun()
     with btn2:
-        if st.button("📊 View Dashboard", use_container_width=True):
+        if st.button("View Dashboard", use_container_width=True):
             st.session_state.page = "dashboard"
             st.rerun()
 
 
-# ═══════════════════════════════════════════════════════════════
-#  RENDER
-# ═══════════════════════════════════════════════════════════════
+# RENDER
 topnav()
 
 if st.session_state.page == "dashboard":
@@ -867,3 +1091,4 @@ elif st.session_state.page == "predict":
     page_predict()
 elif st.session_state.page == "results":
     page_results()
+
